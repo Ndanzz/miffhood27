@@ -1,35 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, MapPin, Clock, ShoppingBag, BookOpen, Compass, ChevronRight, Star } from 'lucide-react';
-
-interface FoodItem {
-  id: string;
-  name: string;
-  category: string;
-  price: number;
-  image_url: string;
-  rating: number;
-}
-
-const FEATURED_MENUS: FoodItem[] = [
-  {
-    id: '1',
-    name: 'Nasi Mandhi Kambing Special',
-    category: 'Kuliner Timur Tengah',
-    price: 55000,
-    image_url: 'https://images.unsplash.com/photo-1543353071-10c8ba85a904?auto=format&fit=crop&w=500&q=80',
-    rating: 4.9,
-  },
-  {
-    id: '2',
-    name: 'Ayam Bakar Madu Berkah',
-    category: 'Menu Nusantara',
-    price: 32000,
-    image_url: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=500&q=80',
-    rating: 4.8,
-  },
-];
+import { Sparkles, MapPin, Clock, BookOpen, Compass, Bookmark, Moon } from 'lucide-react';
 
 export default function Home() {
   const [currentPrayer] = useState({ name: 'Dzuhur', time: '12:04' });
@@ -74,7 +46,7 @@ export default function Home() {
 
       {/* Main Content Container */}
       <main className="max-w-4xl mx-auto px-4 -mt-6 space-y-6">
-        {/* Quick Access Menu / Modul Islami Shortcuts */}
+        {/* Quick Access Menu / Modul Islami Utama */}
         <section className="grid grid-cols-4 gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
           <a href="/islamic/quran" className="flex flex-col items-center gap-1.5 group">
             <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl group-hover:scale-105 transition">
@@ -102,60 +74,32 @@ export default function Home() {
           </a>
         </section>
 
-        {/* Banner Promo Kuliner */}
-        <section className="bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl p-5 text-white shadow-md flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="bg-white/20 text-xs font-semibold px-2.5 py-0.5 rounded-full">Spesial Hari Ini</span>
-            <h2 className="text-xl font-bold">Diskon Berkah s.d 25%</h2>
-            <p className="text-xs text-amber-100">Nikmati hidangan lezat siap antar ke tempat Anda.</p>
+        {/* Card Pengingat / Mutaba'ah Harian */}
+        <section className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+            <Moon className="w-5 h-5" />
+            <h3 className="font-bold text-base">Amalan Harian</h3>
           </div>
-          <a href="/menu" className="bg-white text-orange-600 hover:bg-amber-50 font-semibold px-4 py-2.5 rounded-xl text-sm shadow transition flex items-center gap-1 shrink-0">
-            Pesan <ChevronRight className="w-4 h-4" />
-          </a>
+          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+            "Barangsiapa membaca satu huruf dari Kitab Allah, maka baginya satu kebaikan dengan membaca huruf tersebut, dan satu kebaikan dilipatgandakan menjadi sepuluh kebaikan." (HR. Tirmidzi)
+          </p>
         </section>
 
-        {/* Katalog Menu Unggulan */}
+        {/* Section Bookmark / Akses Cepat Doa Simpanan */}
         <section className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold">Menu Kuliner Unggulan</h3>
-            <a href="/menu" className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
-              Lihat Semua
+            <h3 className="text-lg font-bold flex items-center gap-2">
+              <Bookmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              Bookmark Saya
+            </h3>
+            <a href="/islamic/quran" className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
+              Buka Al-Qur'an
             </a>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {FEATURED_MENUS.map((item) => (
-              <div 
-                key={item.id} 
-                className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition flex flex-col justify-between"
-              >
-                <div>
-                  <div className="relative h-44 w-full">
-                    <img 
-                      src={item.image_url} 
-                      alt={item.name} 
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute top-3 right-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm px-2 py-1 rounded-lg text-xs font-bold flex items-center gap-1 shadow">
-                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                      <span>{item.rating}</span>
-                    </div>
-                  </div>
-                  <div className="p-4 space-y-1">
-                    <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">{item.category}</span>
-                    <h4 className="font-bold text-base line-clamp-1">{item.name}</h4>
-                    <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      Rp {item.price.toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                </div>
-                <div className="p-4 pt-0">
-                  <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded-xl text-sm flex items-center justify-center gap-2 transition shadow-sm">
-                    <ShoppingBag className="w-4 h-4" /> Tambah ke Keranjang
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 text-center space-y-2 shadow-sm">
+            <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada ayat atau doa yang disimpan.</p>
+            <p className="text-xs text-slate-400">Tandai ayat favorit Anda saat membaca Al-Qur'an untuk membacanya kembali di sini.</p>
           </div>
         </section>
       </main>
