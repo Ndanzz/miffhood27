@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 
@@ -22,18 +22,29 @@ interface SurahDetail {
   ayat: Ayah[];
 }
 
-export default function DetailSurahPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const surahId = resolvedParams.id;
-
+export default function DetailSurahPage({ params }: { params: { id: string } }) {
+  // Mengakses params secara aman
+  const [surahId, setSurahId] = useState<string>('');
   const [surah, setSurah] = useState<SurahDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [playingAudio, setPlayingAudio] = useState<string | null>(null);
   const [audioObj, setAudioObj] = useState<HTMLAudioElement | null>(null);
 
   useEffect(() => {
+    // Unwrap params secara aman di useEffect untuk menghindari error prerender Vercel
+    Promise.resolve(params).then((resolvedParams) => {
+      if (resolvedParams?.id) {
+        setSurahId(resolvedParams.id);
+      }
+    });
+  }, [params]);
+
+  useEffect(() => {
+    if (!surahId) return;
+
     async function fetchSurahDetail() {
       try {
+        setLoading(true);
         const res = await fetch(`https://equran.id/api/v2/surat/${surahId}`);
         const data = await res.json();
         setSurah(data.data);
@@ -43,7 +54,8 @@ export default function DetailSurahPage({ params }: { params: Promise<{ id: stri
         setLoading(false);
       }
     }
-    if (surahId) fetchSurahDetail();
+
+    fetchSurahDetail();
   }, [surahId]);
 
   const handlePlayAudio = (url: string) => {
@@ -78,7 +90,7 @@ export default function DetailSurahPage({ params }: { params: Promise<{ id: stri
 
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-4">
         {loading ? (
-          <div className="py-20 text-center text-sm text-slate-500">Memuat ayat...</div>
+          <div className="py-20 text-center text-sm text-slate-500">Memuat ayat Al-Qur'an...</div>
         ) : (
           surah?.ayat.map((item) => (
             <div key={item.nomorAyat} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 space-y-3 shadow-sm">
