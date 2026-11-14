@@ -23,7 +23,6 @@ export default function DoaPage() {
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [loading, setLoading] = useState(true);
 
-  // State untuk Modal & Form Tambah Doa
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -59,7 +58,6 @@ export default function DoaPage() {
     fetchDuas();
   }, []);
 
-  // Fungsi Simpan Doa Baru ke Supabase
   const handleAddDua = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.arabic || !formData.translation) return;
@@ -80,7 +78,6 @@ export default function DoaPage() {
       if (error) {
         alert('Gagal menyimpan doa: ' + error.message);
       } else {
-        // Reset form, tutup modal, dan muat ulang daftar doa
         setFormData({
           title: '',
           category: 'Harian',
@@ -115,7 +112,6 @@ export default function DoaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-24 transition-colors duration-300">
-      {/* Header Bar */}
       <header className="sticky top-0 z-10 bg-amber-600 dark:bg-amber-900 text-white px-4 py-4 shadow-md backdrop-blur-md">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -135,7 +131,6 @@ export default function DoaPage() {
             </div>
           </div>
 
-          {/* Tombol Buka Modal Tambah Doa */}
           <button
             onClick={() => setIsModalOpen(true)}
             className="flex items-center gap-1.5 bg-white text-amber-700 hover:bg-amber-50 font-semibold px-3.5 py-2 rounded-xl text-xs sm:text-sm shadow-sm transition shrink-0"
@@ -145,7 +140,6 @@ export default function DoaPage() {
           </button>
         </div>
 
-        {/* Search Input */}
         <div className="max-w-4xl mx-auto mt-4 relative">
           <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
           <input
@@ -157,7 +151,6 @@ export default function DoaPage() {
           />
         </div>
 
-        {/* Filter Kategori */}
         {categories.length > 1 && (
           <div className="max-w-4xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {categories.map((cat) => (
@@ -177,7 +170,6 @@ export default function DoaPage() {
         )}
       </header>
 
-      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-4">
         {loading ? (
           <div className="py-20 text-center space-y-3">
@@ -195,7 +187,6 @@ export default function DoaPage() {
               key={dua.id}
               className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4 hover:border-amber-400 transition"
             >
-              {/* Top Tag Kategori & Source */}
               <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl">
                 <span className="text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-lg">
                   {dua.category}
@@ -207,26 +198,22 @@ export default function DoaPage() {
                 )}
               </div>
 
-              {/* Judul Doa */}
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                 {dua.title}
               </h3>
 
-              {/* Teks Arab */}
               <div className="text-right py-2">
                 <p className="text-2xl sm:text-3xl font-serif leading-loose text-amber-800 dark:text-amber-300">
                   {dua.arabic}
                 </p>
               </div>
 
-              {/* Transliterasi Latin */}
               {dua.latin && (
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400 italic">
                   {dua.latin}
                 </p>
               )}
 
-              {/* Terjemahan */}
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 &quot;{dua.translation}&quot;
               </p>
@@ -235,7 +222,6 @@ export default function DoaPage() {
         )}
       </main>
 
-      {/* Modal Form Tambah Doa Manual */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 shadow-xl space-y-4">
