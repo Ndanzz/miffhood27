@@ -20,6 +20,7 @@ export default function DoaPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const supabase = createClient();
 
@@ -27,16 +28,24 @@ export default function DoaPage() {
     async function fetchDuas() {
       try {
         setLoading(true);
+        setErrorMsg(null);
+
         const { data, error } = await supabase
           .from('mh_duas')
           .select('*')
           .order('created_at', { ascending: true });
 
-        if (!error && data) {
+        if (error) {
+          setErrorMsg(error.message);
+        } else if (data) {
           setDuas(data);
         }
-      } catch (err) {
-        console.error(err);
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setErrorMsg(err.message);
+        } else {
+          setErrorMsg('Gagal terhubung ke database Supabase.');
+        }
       } finally {
         setLoading(false);
       }
@@ -50,7 +59,7 @@ export default function DoaPage() {
   const filteredDuas = duas.filter((dua) => {
     const matchesSearch =
       dua.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      dua.latin.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (dua.latin && dua.latin.toLowerCase().includes(searchQuery.toLowerCase())) ||
       dua.translation.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesCategory =
@@ -61,6 +70,7 @@ export default function DoaPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-24 transition-colors duration-300">
+      {/* Header */}
       <header className="sticky top-0 z-10 bg-amber-600 dark:bg-amber-900 text-white px-4 py-4 shadow-md backdrop-blur-md">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
@@ -81,6 +91,7 @@ export default function DoaPage() {
           </div>
         </div>
 
+        {/* Input Pencarian */}
         <div className="max-w-4xl mx-auto mt-4 relative">
           <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
           <input
@@ -92,6 +103,7 @@ export default function DoaPage() {
           />
         </div>
 
+        {/* Filter Kategori */}
         {categories.length > 1 && (
           <div className="max-w-4xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
             {categories.map((cat) => (
@@ -111,16 +123,22 @@ export default function DoaPage() {
         )}
       </header>
 
+      {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-4">
         {loading ? (
           <div className="py-20 text-center space-y-3">
             <div className="w-10 h-10 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
             <p className="text-sm text-slate-500 dark:text-slate-400">Memuat data doa...</p>
           </div>
+        ) : errorMsg ? (
+          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center space-y-2">
+            <p className="text-sm font-bold text-red-600 dark:text-red-400">Gagal Memuat Data Supabase</p>
+            <p className="text-xs text-red-500 font-mono break-all">{errorMsg}</p>
+          </div>
         ) : filteredDuas.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center space-y-2 shadow-sm">
             <p className="text-base font-semibold">Doa tidak ditemukan</p>
-            <p className="text-xs text-slate-400">Belum ada data doa di database Supabase.</p>
+            <p className="text-xs text-slate-400">Belum ada data doa di tabel mh_duas Supabase.</p>
           </div>
         ) : (
           filteredDuas.map((dua) => (
@@ -128,6 +146,7 @@ export default function DoaPage() {
               key={dua.id}
               className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-4 hover:border-amber-400 transition"
             >
+              {/* Kategori & Sumber */}
               <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl">
                 <span className="text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 px-3 py-1 rounded-lg">
                   {dua.category}
@@ -139,22 +158,26 @@ export default function DoaPage() {
                 )}
               </div>
 
+              {/* Judul Doa */}
               <h3 className="text-base font-bold text-slate-800 dark:text-slate-100">
                 {dua.title}
               </h3>
 
+              {/* Teks Arab */}
               <div className="text-right py-2">
                 <p className="text-2xl sm:text-3xl font-serif leading-loose text-amber-800 dark:text-amber-300">
                   {dua.arabic}
                 </p>
               </div>
 
+              {/* Transliterasi Latin */}
               {dua.latin && (
                 <p className="text-sm font-medium text-amber-700 dark:text-amber-400 italic">
                   {dua.latin}
                 </p>
               )}
 
+              {/* Terjemahan Indonesia */}
               <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
                 &quot;{dua.translation}&quot;
               </p>
