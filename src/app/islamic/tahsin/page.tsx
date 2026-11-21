@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Mic, ArrowLeft, Search, BookCheck } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
 interface TahsinMaterial {
   id: string;
@@ -10,132 +11,56 @@ interface TahsinMaterial {
   title: string;
   letters: string;
   explanation: string;
-  exampleArabic: string;
-  exampleLatin: string;
-  howToRead: string;
+  example_arabic: string;
+  example_latin: string;
+  how_to_read: string;
 }
 
-const TAHSIN_DATA: TahsinMaterial[] = [
-  {
-    id: 'makhraj-1',
-    category: 'Makharijul Huruf',
-    title: 'Al-Jauf (Rongga Mulut & Tenggorokan)',
-    letters: 'ا ، و ، ي (Huruf Mad)',
-    explanation:
-      'Suara keluar dari rongga tenggorokan hingga rongga mulut saat memanjangkan bacaan (Mad).',
-    exampleArabic: 'نُوحِيهَا',
-    exampleLatin: 'Nuuhiihaa',
-    howToRead:
-      'Dipanjangkan 2 harakat dengan aliran suara bersih tanpa tertahan di hidung (tidak mendengung).',
-  },
-  {
-    id: 'makhraj-2',
-    category: 'Makharijul Huruf',
-    title: 'Al-Halq (Tenggorokan)',
-    letters: 'ء ، هـ ، ع ، ح ، غ ، خ',
-    explanation:
-      'Terbagi 3 bagian: pangkal tenggorokan (ء، هـ), tengah tenggorokan (ع، ح), dan ujung tenggorokan (غ، خ).',
-    exampleArabic: 'أَنْعَمْتَ عَلَيْهِمْ',
-    exampleLatin: "An'amta 'alaihim",
-    howToRead:
-      'Huruf ع dan ح diucapkan jernih dari tengah tenggorokan, bukan dari rongga hidung atau dada.',
-  },
-  {
-    id: 'makhraj-3',
-    category: 'Makharijul Huruf',
-    title: 'Al-Lisan (Lidah)',
-    letters: 'ق ، ك ، ج ، ش ، ي ، ض ، ل ، ن ، ر ، ط ، د ، ت ، ص ، ز ، س ، ظ ، ذ ، ث',
-    explanation:
-      'Tempat keluarnya 18 huruf hijaiyah mulai dari pangkal lidah, tengah lidah, tepi lidah, hingga ujung lidah.',
-    exampleArabic: 'وَلَا الضَّالِّينَ',
-    exampleLatin: 'Wa ladh-dhaalliin',
-    howToRead:
-      'Huruf ض (Dhad) dikeluarkan dengan menempelkan salah satu atau kedua tepi lidah ke gigi geraham atas.',
-  },
-  {
-    id: 'nun-1',
-    category: 'Nun Sukun & Tanwin',
-    title: 'Izhar Halqi (Bacaan Jelas)',
-    letters: 'ء ، هـ ، ع ، ح ، غ ، خ',
-    explanation:
-      'Apabila Nun Sukun (نْ) atau Tanwin (ـً ـٍ ـٌ) bertemu salah satu dari 6 huruf tenggorokan.',
-    exampleArabic: 'مَنْ آمَنَ — سَمِيعٌ عَلِيمٌ',
-    exampleLatin: "Man aamana — Samii'un 'aliim",
-    howToRead:
-      'Bunyi N pada Nun Sukun/Tanwin dibaca jelas dan tegas tanpa dengung tambahan.',
-  },
-  {
-    id: 'nun-2',
-    category: 'Nun Sukun & Tanwin',
-    title: 'Idgham Bighunnah (Melebur dengan Dengung)',
-    letters: 'ي ، ن ، م ، و (يَنْمُو)',
-    explanation:
-      'Apabila Nun Sukun atau Tanwin bertemu huruf ي، ن، م، و dalam dua kata terpisah.',
-    exampleArabic: 'مَنْ يَقُولُ — هُدًى وَرَحْمَةٌ',
-    exampleLatin: 'May-yaquulu — Hudaw-wa rahmah',
-    howToRead:
-      'Bunyi Nun dileburkan ke huruf berikutnya disertai dengung (ghunnah) yang ditahan 2 harakat.',
-  },
-  {
-    id: 'nun-3',
-    category: 'Nun Sukun & Tanwin',
-    title: 'Iqlab (Membalik Bunyi)',
-    letters: 'ب',
-    explanation:
-      'Apabila Nun Sukun atau Tanwin bertemu huruf Ba (ب).',
-    exampleArabic: 'مِنْ بَعْدِ — سَمِيعٌ بَصِيرٌ',
-    exampleLatin: "Mim-ba'di — Samii'um-bashiir",
-    howToRead:
-      'Bunyi N diubah menjadi bunyi M ringan dengan merapatkan kedua bibir secara lembut dan mendengung 2 harakat.',
-  },
-  {
-    id: 'nun-4',
-    category: 'Nun Sukun & Tanwin',
-    title: 'Ikhfa Haqiqi (Samar-samar)',
-    letters: 'ت ، ث ، ج ، د ، ذ ، ز ، س ، ش ، ص ، ض ، ط ، ظ ، ف ، ق ، ك',
-    explanation:
-      'Apabila Nun Sukun atau Tanwin bertemu salah satu dari 15 huruf Ikhfa.',
-    exampleArabic: 'مِنْ شَرِّ — أَنْفُسَكُمْ',
-    exampleLatin: 'Min-syarri — Anfusakum',
-    howToRead:
-      'Bunyi N dibaca samar di antara Izhar dan Idgham, lidah bersiap menuju makhraj huruf berikutnya sambil berdengung 2 harakat.',
-  },
-  {
-    id: 'mim-1',
-    category: 'Hukum Mim Sukun',
-    title: 'Ikhfa Syafawi & Idgham Mimi',
-    letters: 'ب (Ikhfa Syafawi) & م (Idgham Mimi)',
-    explanation:
-      'Hukum bacaan saat Mim Sukun (مْ) bertemu huruf Ba (ب) atau huruf Mim berharakat (م).',
-    exampleArabic: 'تَرْمِيهِمْ بِحِجَارَةٍ — لَهُمْ مَا يَشَاءُونَ',
-    exampleLatin: 'Tarmiihim-bihijaarah — Lahum-maa yasyaa-uun',
-    howToRead:
-      'Kedua bibir dirapatkan dengan lembut disertai dengung yang ditahan selama 2 harakat.',
-  },
-  {
-    id: 'qalqalah-1',
-    category: 'Qalqalah & Mad',
-    title: 'Qalqalah Sugra & Kubra (Pantulan)',
-    letters: 'ق ، ط ، ب ، ج ، د (قُطْبُ جَدٍّ)',
-    explanation:
-      'Memantulkan suara saat huruf Qalqalah berharakat sukun (di tengah kata = Sugra, di akhir ayat/waqaf = Kubra).',
-    exampleArabic: 'قُلْ هُوَ اللَّهُ أَحَدٌ',
-    exampleLatin: 'Qul huwallaahu ahad(e)',
-    howToRead:
-      'Huruf د di akhir ayat dipantulkan dengan jelas tanpa menambah harakat vokal baru.',
-  },
-];
-
 export default function TahsinPage() {
+  const [materials, setMaterials] = useState<TahsinMaterial[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('Semua');
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function fetchTahsin() {
+      try {
+        setLoading(true);
+        setErrorMsg(null);
+
+        const { data, error } = await supabase
+          .from('mh_tahsin')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          setErrorMsg(error.message);
+        } else if (data) {
+          setMaterials(data);
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          setErrorMsg(err.message);
+        } else {
+          setErrorMsg('Gagal memuat data Tahsin dari Supabase.');
+        }
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTahsin();
+  }, []);
 
   const categories = [
     'Semua',
-    ...Array.from(new Set(TAHSIN_DATA.map((item) => item.category))),
+    ...Array.from(new Set(materials.map((item) => item.category))),
   ];
 
-  const filteredMaterials = TAHSIN_DATA.filter((item) => {
+  const filteredMaterials = materials.filter((item) => {
     const matchesCategory =
       selectedCategory === 'Semua' || item.category === selectedCategory;
     const matchesSearch =
@@ -182,30 +107,46 @@ export default function TahsinPage() {
         </div>
 
         {/* Filter Kategori */}
-        <div className="max-w-4xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition ${
-                selectedCategory === cat
-                  ? 'bg-white text-sky-700 shadow-sm'
-                  : 'bg-sky-700/40 text-sky-100 hover:bg-sky-700/60'
-              }`}
-            >
-              {cat}
-            </button>
-          ))}
-        </div>
+        {categories.length > 1 && (
+          <div className="max-w-4xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition ${
+                  selectedCategory === cat
+                    ? 'bg-white text-sky-700 shadow-sm'
+                    : 'bg-sky-700/40 text-sky-100 hover:bg-sky-700/60'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        )}
       </header>
 
       {/* Daftar Materi Tahsin */}
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-4">
-        {filteredMaterials.length === 0 ? (
+        {loading ? (
+          <div className="py-20 text-center space-y-3">
+            <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Memuat materi Tahsin...
+            </p>
+          </div>
+        ) : errorMsg ? (
+          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center space-y-2">
+            <p className="text-sm font-bold text-red-600 dark:text-red-400">
+              Gagal Memuat Materi Tahsin
+            </p>
+            <p className="text-xs text-red-500 font-mono break-all">{errorMsg}</p>
+          </div>
+        ) : filteredMaterials.length === 0 ? (
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center space-y-2">
             <p className="text-base font-semibold">Materi tidak ditemukan</p>
             <p className="text-xs text-slate-400">
-              Coba gunakan kata kunci pencarian yang lain.
+              Belum ada materi atau kata kunci tidak cocok.
             </p>
           </div>
         ) : (
@@ -234,10 +175,10 @@ export default function TahsinPage() {
               {/* Kotak Contoh Bacaan */}
               <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl p-4 space-y-2">
                 <p className="text-right text-2xl font-serif leading-loose text-sky-800 dark:text-sky-300">
-                  {item.exampleArabic}
+                  {item.example_arabic}
                 </p>
                 <p className="text-xs font-semibold text-sky-700 dark:text-sky-400 italic">
-                  {item.exampleLatin}
+                  {item.example_latin}
                 </p>
               </div>
 
@@ -246,7 +187,7 @@ export default function TahsinPage() {
                 <BookCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
                 <p>
                   <strong className="font-semibold">Cara Membaca:</strong>{' '}
-                  {item.howToRead}
+                  {item.how_to_read}
                 </p>
               </div>
             </div>
