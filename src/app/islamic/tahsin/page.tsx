@@ -1,109 +1,36 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
-import { Mic, ArrowLeft, Search, BookCheck, Layers } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { Mic, ArrowLeft, BookOpenCheck, Languages, ChevronRight } from 'lucide-react';
 
-interface TahsinMaterial {
-  id: string;
-  category: string;
-  sub_category?: string | null;
-  title: string;
-  letters: string;
-  explanation: string;
-  example_arabic: string;
-  example_latin: string;
-  how_to_read: string;
-}
-
-export default function TahsinPage() {
-  const [materials, setMaterials] = useState<TahsinMaterial[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('Makharijul Huruf');
-  const [selectedSubCategory, setSelectedSubCategory] = useState('Semua Bagian');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  const supabase = createClient();
-
-  useEffect(() => {
-    async function fetchTahsin() {
-      try {
-        setLoading(true);
-        setErrorMsg(null);
-
-        const { data, error } = await supabase
-          .from('mh_tahsin')
-          .select('*')
-          .order('created_at', { ascending: true });
-
-        if (error) {
-          setErrorMsg(error.message);
-        } else if (data) {
-          setMaterials(data);
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setErrorMsg(err.message);
-        } else {
-          setErrorMsg('Gagal memuat data Tahsin dari Supabase.');
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchTahsin();
-  }, []);
-
-  // Daftar kategori utama (contoh: Makharijul Huruf, Nun Sukun & Tanwin, dll)
-  const categories = [
-    'Semua',
-    ...Array.from(new Set(materials.map((item) => item.category))),
+export default function TahsinMenuPage() {
+  const tahsinSections = [
+    {
+      title: 'Makhorijul Huruf',
+      subtitle: 'Tempat Keluarnya Huruf Hijaiyah',
+      description:
+        'Pelajari pembagian tempat keluarnya huruf mulai dari Al-Jauf, Al-Halq (tenggorokan), Al-Lisan (lidah), Asy-Syafatain (bibir), hingga Al-Khaisyum.',
+      href: '/islamic/tahsin/makhorijul-huruf',
+      icon: Languages,
+      badge: 'Makhraj & Sifat',
+      colorBg: 'bg-sky-50 dark:bg-sky-950/60',
+      colorText: 'text-sky-600 dark:text-sky-400',
+      borderHover: 'hover:border-sky-500',
+    },
+    {
+      title: "Tajwid Al-Qur'an",
+      subtitle: 'Hukum Bacaan & Panjang Pendek',
+      description:
+        'Pelajari hukum Nun Sukun & Tanwin, hukum Mim Sukun, Qalqalah, Ghunnah, serta hukum bacaan Mad lengkap dengan contoh ayat.',
+      href: '/islamic/tahsin/tajwid',
+      icon: BookOpenCheck,
+      badge: 'Hukum Bacaan',
+      colorBg: 'bg-indigo-50 dark:bg-indigo-950/60',
+      colorText: 'text-indigo-600 dark:text-indigo-400',
+      borderHover: 'hover:border-indigo-500',
+    },
   ];
-
-  // Daftar sub-bagian khusus untuk kategori yang sedang dipilih (misal: Al-Jauf, Al-Halq, Al-Lisan, dll)
-  const subCategoriesList = Array.from(
-    new Set(
-      materials
-        .filter(
-          (item) =>
-            (selectedCategory === 'Semua' ||
-              item.category === selectedCategory) &&
-            item.sub_category &&
-            item.sub_category.trim() !== ''
-        )
-        .map((item) => item.sub_category as string)
-    )
-  );
-
-  const subCategories =
-    subCategoriesList.length > 0 ? ['Semua Bagian', ...subCategoriesList] : [];
-
-  const handleSelectCategory = (cat: string) => {
-    setSelectedCategory(cat);
-    setSelectedSubCategory('Semua Bagian');
-  };
-
-  const filteredMaterials = materials.filter((item) => {
-    const matchesCategory =
-      selectedCategory === 'Semua' || item.category === selectedCategory;
-
-    const matchesSubCategory =
-      subCategories.length === 0 ||
-      selectedSubCategory === 'Semua Bagian' ||
-      item.sub_category === selectedSubCategory;
-
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.explanation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.letters.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.sub_category &&
-        item.sub_category.toLowerCase().includes(searchQuery.toLowerCase()));
-
-    return matchesCategory && matchesSubCategory && matchesSearch;
-  });
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-24 transition-colors duration-300">
@@ -123,145 +50,50 @@ export default function TahsinPage() {
               Tahsin Al-Qur&apos;an
             </h1>
             <p className="text-xs text-sky-100">
-              Panduan makharijul huruf &amp; ilmu tajwid praktis
+              Pilih materi pembelajaran makhraj atau ilmu tajwid
             </p>
           </div>
         </div>
-
-        {/* Input Pencarian */}
-        <div className="max-w-4xl mx-auto mt-4 relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Cari bagian makhraj, hukum tajwid, atau huruf..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 shadow-inner"
-          />
-        </div>
-
-        {/* Filter Kategori Utama */}
-        {categories.length > 1 && (
-          <div className="max-w-4xl mx-auto mt-3 flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => handleSelectCategory(cat)}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition ${
-                  selectedCategory === cat
-                    ? 'bg-white text-sky-700 shadow-sm'
-                    : 'bg-sky-700/40 text-sky-100 hover:bg-sky-700/60'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        )}
       </header>
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 pt-5 space-y-4">
-        {/* Sub-Navigasi Bagian (Otomatis muncul saat kategori punya sub_category, misal Makhorijul Huruf) */}
-        {subCategories.length > 0 && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-3 shadow-sm space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1">
-              <Layers className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
-              <span>Pilih Bagian {selectedCategory !== 'Semua' ? selectedCategory : 'Materi'}:</span>
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {subCategories.map((sub) => (
-                <button
-                  key={sub}
-                  onClick={() => setSelectedSubCategory(sub)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition ${
-                    selectedSubCategory === sub
-                      ? 'bg-sky-600 text-white shadow-sm'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {sub}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Daftar Kartu Materi */}
-        {loading ? (
-          <div className="py-20 text-center space-y-3">
-            <div className="w-10 h-10 border-4 border-sky-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Memuat materi Tahsin...
-            </p>
-          </div>
-        ) : errorMsg ? (
-          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center space-y-2">
-            <p className="text-sm font-bold text-red-600 dark:text-red-400">
-              Gagal Memuat Materi Tahsin
-            </p>
-            <p className="text-xs text-red-500 font-mono break-all">{errorMsg}</p>
-          </div>
-        ) : filteredMaterials.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center space-y-2">
-            <p className="text-base font-semibold">Materi tidak ditemukan</p>
-            <p className="text-xs text-slate-400">
-              Belum ada materi pada bagian ini atau kata kunci tidak cocok.
-            </p>
-          </div>
-        ) : (
-          filteredMaterials.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3.5 hover:border-sky-400 transition"
+      {/* Pilihan Sub-Menu Tahsin */}
+      <main className="max-w-4xl mx-auto px-4 pt-6 space-y-4">
+        {tahsinSections.map((section) => {
+          const IconComponent = section.icon;
+          return (
+            <Link
+              key={section.href}
+              href={section.href}
+              className={`block bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-5 shadow-sm transition group ${section.borderHover}`}
             >
-              {/* Lencana Kategori, Sub-Bagian, & Huruf */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-bold bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-400 px-3 py-1 rounded-lg">
-                    {item.category}
-                  </span>
-                  {item.sub_category && (
-                    <span className="text-xs font-semibold bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 px-2.5 py-1 rounded-lg">
-                      {item.sub_category}
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start gap-4">
+                  <div
+                    className={`p-3.5 rounded-2xl shrink-0 ${section.colorBg} ${section.colorText}`}
+                  >
+                    <IconComponent className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <span className="inline-block text-[11px] font-bold px-2.5 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                      {section.badge}
                     </span>
-                  )}
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100">
+                      {section.title}
+                    </h2>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                      {section.subtitle}
+                    </p>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed pt-1">
+                      {section.description}
+                    </p>
+                  </div>
                 </div>
 
-                <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-lg">
-                  Huruf: {item.letters}
-                </span>
+                <ChevronRight className="w-5 h-5 text-slate-400 group-hover:translate-x-1 transition shrink-0 mt-2" />
               </div>
-
-              <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
-                {item.title}
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                {item.explanation}
-              </p>
-
-              {/* Kotak Contoh Bacaan */}
-              <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 rounded-xl p-4 space-y-2">
-                <p className="text-right text-2xl font-serif leading-loose text-sky-800 dark:text-sky-300">
-                  {item.example_arabic}
-                </p>
-                <p className="text-xs font-semibold text-sky-700 dark:text-sky-400 italic">
-                  {item.example_latin}
-                </p>
-              </div>
-
-              {/* Cara Membaca */}
-              <div className="flex items-start gap-2 pt-1 text-xs text-slate-600 dark:text-slate-300">
-                <BookCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <p>
-                  <strong className="font-semibold">Cara Membaca:</strong>{' '}
-                  {item.how_to_read}
-                </p>
-              </div>
-            </div>
-          ))
-        )}
+            </Link>
+          );
+        })}
       </main>
     </div>
   );
