@@ -1,106 +1,160 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Sparkles, MapPin, Clock, BookOpen, Compass, Bookmark, Moon } from 'lucide-react';
+import React from 'react';
+import Link from 'next/link';
+import {
+  BookOpen,
+  Sparkles,
+  Compass,
+  UtensilsCrossed,
+  Clock,
+  ChevronRight,
+  MoonStar,
+} from 'lucide-react';
 
-export default function Home() {
-  const [currentPrayer] = useState({ name: 'Dzuhur', time: '12:04' });
-  const [countdown] = useState('02:15:40');
+export default function HomePage() {
+  const islamicMenus = [
+    {
+      title: 'Al-Qur\'an Digital',
+      description: 'Baca 114 surah lengkap dengan audio & terjemahan',
+      href: '/islamic/quran',
+      icon: BookOpen,
+      colorBg: 'bg-emerald-50 dark:bg-emerald-950/60',
+      colorText: 'text-emerald-600 dark:text-emerald-400',
+      borderHover: 'hover:border-emerald-500',
+    },
+    {
+      title: 'Kumpulan Do\'a',
+      description: 'Doa harian pilihan lengkap dengan tulisan Arab & Latin',
+      href: '/islamic/doa',
+      icon: Sparkles,
+      colorBg: 'bg-amber-50 dark:bg-amber-950/60',
+      colorText: 'text-amber-600 dark:text-amber-400',
+      borderHover: 'hover:border-amber-500',
+    },
+    {
+      title: 'Arah Kiblat & Sholat',
+      description: 'Kompas penunjuk Ka\'bah & jadwal sholat otomatis',
+      href: '/islamic/kiblat',
+      icon: Compass,
+      colorBg: 'bg-teal-50 dark:bg-teal-950/60',
+      colorText: 'text-teal-600 dark:text-teal-400',
+      borderHover: 'hover:border-teal-500',
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-24 transition-colors duration-300">
-      {/* Header / Hero Section */}
-      <header className="bg-emerald-600 dark:bg-emerald-900 text-white px-4 pt-6 pb-12 rounded-b-3xl shadow-md">
-        <div className="max-w-4xl mx-auto flex justify-between items-center mb-6">
-          <div>
-            <span className="text-xs uppercase tracking-wider bg-emerald-700 dark:bg-emerald-800 px-3 py-1 rounded-full font-medium">
-              miffhood27 PWA
-            </span>
-            <h1 className="text-2xl font-bold mt-2">Ahlan wa Sahlan, Sahabat ✨</h1>
-          </div>
-          <div className="flex items-center gap-2 bg-emerald-700/50 dark:bg-emerald-800/50 px-3 py-2 rounded-2xl backdrop-blur-sm">
-            <MapPin className="w-4 h-4 text-emerald-200" />
-            <span className="text-sm font-medium">Jakarta, ID</span>
-          </div>
-        </div>
-
-        {/* Widget Jadwal Sholat Terdekat */}
-        <div className="max-w-4xl mx-auto bg-white/10 dark:bg-slate-900/40 border border-white/20 backdrop-blur-md rounded-2xl p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-emerald-500/20 rounded-xl">
-              <Clock className="w-6 h-6 text-emerald-200" />
-            </div>
-            <div>
-              <p className="text-xs text-emerald-100">Menuju Sholat {currentPrayer.name}</p>
-              <p className="text-lg font-bold">{currentPrayer.time} WIB</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <span className="text-xs text-emerald-200 block">Sisa Waktu</span>
-            <span className="text-sm font-mono font-semibold bg-emerald-800/40 px-2.5 py-1 rounded-lg">
-              {countdown}
+      {/* Header Utama */}
+      <header className="bg-gradient-to-br from-emerald-600 via-teal-600 to-teal-700 dark:from-emerald-900 dark:via-teal-900 dark:to-slate-900 text-white px-5 pt-8 pb-10 rounded-b-3xl shadow-md">
+        <div className="max-w-4xl mx-auto space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/15 backdrop-blur-sm px-3 py-1 rounded-full">
+              <MoonStar className="w-3.5 h-3.5 text-amber-200" />
+              miffhood27 App
             </span>
           </div>
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight pt-1">
+            Assalamu&apos;alaikum
+          </h1>
+          <p className="text-xs sm:text-sm text-emerald-100 max-w-md">
+            Pendamping ibadah harian dan layanan kuliner dalam satu aplikasi praktis.
+          </p>
         </div>
       </header>
 
-      {/* Main Content Container */}
-      <main className="max-w-4xl mx-auto px-4 -mt-6 space-y-6">
-        {/* Quick Access Menu / Modul Islami Utama */}
-        <section className="grid grid-cols-4 gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-800">
-          <a href="/islamic/quran" className="flex flex-col items-center gap-1.5 group">
-            <div className="p-3 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl group-hover:scale-105 transition">
-              <BookOpen className="w-6 h-6" />
+      {/* Konten Utama */}
+      <main className="max-w-4xl mx-auto px-4 -mt-5 space-y-7">
+        {/* Banner Cepat Arah Kiblat & Jadwal Sholat */}
+        <Link
+          href="/islamic/kiblat"
+          className="block bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-4 shadow-sm hover:border-teal-500 transition group"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-xl bg-teal-50 dark:bg-teal-950/70 text-teal-600 dark:text-teal-400">
+                <Clock className="w-6 h-6" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-800 dark:text-slate-100">
+                  Cek Jadwal Sholat &amp; Arah Kiblat
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Akurat sesuai koordinat lokasi GPS Anda sekarang
+                </p>
+              </div>
             </div>
-            <span className="text-xs font-medium text-center">Al-Qur'an</span>
-          </a>
-          <a href="/islamic/doa" className="flex flex-col items-center gap-1.5 group">
-            <div className="p-3 bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 rounded-xl group-hover:scale-105 transition">
-              <Sparkles className="w-6 h-6" />
-            </div>
-            <span className="text-xs font-medium text-center">Do'a Harian</span>
-          </a>
-          <a href="/islamic/sholat" className="flex flex-col items-center gap-1.5 group">
-            <div className="p-3 bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 rounded-xl group-hover:scale-105 transition">
-              <Clock className="w-6 h-6" />
-            </div>
-            <span className="text-xs font-medium text-center">Panduan Sholat</span>
-          </a>
-          <a href="/islamic/kiblat" className="flex flex-col items-center gap-1.5 group">
-            <div className="p-3 bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 rounded-xl group-hover:scale-105 transition">
-              <Compass className="w-6 h-6" />
-            </div>
-            <span className="text-xs font-medium text-center">Kiblat</span>
-          </a>
+            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-teal-600 group-hover:translate-x-0.5 transition" />
+          </div>
+        </Link>
+
+        {/* Bagian Modul Ibadah & Islami */}
+        <section className="space-y-3">
+          <div className="px-1">
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
+              Fitur Islami
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Akses Al-Qur&apos;an, doa harian, dan penunjuk arah Kiblat
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+            {islamicMenus.map((menu) => {
+              const IconComponent = menu.icon;
+              return (
+                <Link
+                  key={menu.href}
+                  href={menu.href}
+                  className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex sm:flex-col items-center sm:items-start gap-3.5 shadow-sm transition ${menu.borderHover}`}
+                >
+                  <div className={`p-3 rounded-xl shrink-0 ${menu.colorBg} ${menu.colorText}`}>
+                    <IconComponent className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                      {menu.title}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                      {menu.description}
+                    </p>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
         </section>
 
-        {/* Card Pengingat / Mutaba'ah Harian */}
-        <section className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3">
-          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
-            <Moon className="w-5 h-5" />
-            <h3 className="font-bold text-base">Amalan Harian</h3>
-          </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-            "Barangsiapa membaca satu huruf dari Kitab Allah, maka baginya satu kebaikan dengan membaca huruf tersebut, dan satu kebaikan dilipatgandakan menjadi sepuluh kebaikan." (HR. Tirmidzi)
-          </p>
-        </section>
-
-        {/* Section Bookmark / Akses Cepat Doa Simpanan */}
-        <section className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-bold flex items-center gap-2">
-              <Bookmark className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              Bookmark Saya
-            </h3>
-            <a href="/islamic/quran" className="text-sm font-medium text-emerald-600 dark:text-emerald-400 hover:underline">
-              Buka Al-Qur'an
-            </a>
+        {/* Bagian Modul Kuliner / Menu */}
+        <section className="space-y-3">
+          <div className="px-1">
+            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
+              Layanan Kuliner
+            </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Pesan menu makanan dan minuman favorit
+            </p>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 text-center space-y-2 shadow-sm">
-            <p className="text-sm text-slate-500 dark:text-slate-400">Belum ada ayat atau doa yang disimpan.</p>
-            <p className="text-xs text-slate-400">Tandai ayat favorit Anda saat membaca Al-Qur'an untuk membacanya kembali di sini.</p>
-          </div>
+          <Link
+            href="/menu"
+            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between hover:border-orange-500 transition shadow-sm group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
+                <UtensilsCrossed className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
+                  Katalog Menu &amp; Pemesanan
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Lihat daftar menu tersedia dan buat pesanan
+                </p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-orange-600 group-hover:translate-x-0.5 transition" />
+          </Link>
         </section>
       </main>
     </div>
