@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import {
   BookOpen,
@@ -13,9 +13,11 @@ import {
 } from 'lucide-react';
 
 export default function HomePage() {
+  const [logoError, setLogoError] = useState(false);
+
   const islamicMenus = [
     {
-      title: 'Al-Qur\'an Digital',
+      title: "Al-Qur'an Digital",
       description: 'Baca 114 surah lengkap dengan audio & terjemahan',
       href: '/islamic/quran',
       icon: BookOpen,
@@ -24,7 +26,7 @@ export default function HomePage() {
       borderHover: 'hover:border-emerald-500',
     },
     {
-      title: 'Kumpulan Do\'a',
+      title: "Kumpulan Do'a",
       description: 'Doa harian pilihan lengkap dengan tulisan Arab & Latin',
       href: '/islamic/doa',
       icon: Sparkles,
@@ -34,7 +36,7 @@ export default function HomePage() {
     },
     {
       title: 'Arah Kiblat & Sholat',
-      description: 'Kompas penunjuk Ka\'bah & jadwal sholat otomatis',
+      description: "Kompas penunjuk Ka'bah & jadwal sholat otomatis",
       href: '/islamic/kiblat',
       icon: Compass,
       colorBg: 'bg-teal-50 dark:bg-teal-950/60',
@@ -45,21 +47,42 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-24 transition-colors duration-300">
-      {/* Header Utama */}
-      <header className="bg-gradient-to-br from-emerald-600 via-teal-600 to-teal-700 dark:from-emerald-900 dark:via-teal-900 dark:to-slate-900 text-white px-5 pt-8 pb-10 rounded-b-3xl shadow-md">
-        <div className="max-w-4xl mx-auto space-y-2">
-          <div className="flex items-center justify-between">
+      {/* Header Utama dengan Logo */}
+      <header className="bg-gradient-to-br from-emerald-600 via-teal-600 to-teal-700 dark:from-emerald-900 dark:via-teal-900 dark:to-slate-900 text-white px-5 pt-8 pb-11 rounded-b-3xl shadow-md">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
+          <div className="space-y-2">
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold bg-white/15 backdrop-blur-sm px-3 py-1 rounded-full">
               <MoonStar className="w-3.5 h-3.5 text-amber-200" />
               miffhood27 App
             </span>
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight pt-1">
+              Assalamu&apos;alaikum
+            </h1>
+            <p className="text-xs sm:text-sm text-emerald-100 max-w-md">
+              Pendamping ibadah harian dan layanan kuliner dalam satu aplikasi praktis.
+            </p>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight pt-1">
-            Assalamu&apos;alaikum
-          </h1>
-          <p className="text-xs sm:text-sm text-emerald-100 max-w-md">
-            Pendamping ibadah harian dan layanan kuliner dalam satu aplikasi praktis.
-          </p>
+
+          {/* Container Logo Aplikasi */}
+          <div className="shrink-0">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/95 dark:bg-slate-900/90 p-1.5 shadow-lg border-2 border-white/30 flex items-center justify-center overflow-hidden">
+              {!logoError ? (
+                <img
+                  src="/logo.png"
+                  alt="Logo miffhood27"
+                  onError={() => setLogoError(true)}
+                  className="w-full h-full object-contain rounded-xl"
+                />
+              ) : (
+                <div className="w-full h-full rounded-xl bg-emerald-600 flex flex-col items-center justify-center text-white">
+                  <MoonStar className="w-7 h-7 text-amber-300" />
+                  <span className="text-[9px] font-extrabold tracking-wider mt-0.5">
+                    MH27
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
