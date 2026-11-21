@@ -11,6 +11,7 @@ import {
   RefreshCw,
   AlertCircle,
   Smartphone,
+  SlidersHorizontal,
 } from 'lucide-react';
 
 interface PrayerTimes {
@@ -47,7 +48,8 @@ export default function KiblatPage() {
   const [qiblaAngle, setQiblaAngle] = useState<number>(295);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const [compassSupported, setCompassSupported] = useState<boolean>(false);
-  const [permissionNeeded, setPermissionNeeded] = useState<boolean>(false);
+  const [sensorStatus, setSensorStatus] = useState<string>('Mengecek sensor...');
+  const [manualMode, setManualMode] = useState<boolean>(false);
 
   const [prayerTimes, setPrayerTimes] = useState<PrayerTimes | null>(null);
   const [dateHijri, setDateHijri] = useState<string>('');
@@ -102,44 +104,77 @@ export default function KiblatPage() {
     );
   }, []);
 
-  const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
-    const webkitHeading = (
-      event as DeviceOrientationEvent & { webkitCompassHeading?: number }
-    ).webkitCompassHeading;
+  const handleOrientation = useCallback(
+    (event: DeviceOrientationEvent) => {
+      if (manualMode) return;
 
-    if (typeof webkitHeading === 'number' && !isNaN(webkitHeading)) {
-      // iOS Safari
-      setDeviceHeading(Math.round(webkitHeading));
-      setCompassSupported(true);
-    } else if (event.alpha !== null && !isNaN(event.alpha)) {
-      // Android Chrome (absolute atau standar)
-      const heading = Math.round((360 - event.alpha) % 360);
-      setDeviceHeading(heading);
-      setCompassSupported(true);
+      const webkitHeading = (
+        event as DeviceOrientationEvent & { webkitCompassHeading?: number }
+      ).webkitCompassHeading;
+
+      if (typeof webkitHeading === 'number' && !isNaN(webkitHeading)) {
+        setDeviceHeading(Math.round(webkitHeading));
+        setCompassSupported(true);
+        setSensorStatus('Sensor Kompas Aktif');
+      } else if (event.alpha !== null && !isNaN(event.alpha)) {
+        const heading = Math.round((360 - event.alpha) % 360);
+        setDeviceHeading(heading);
+        setCompassSupported(true);
+        setSensorStatus('Sensor Kompas Aktif');
+      }
+    },
+    [manualMode]
+  );
+
+  const startCompassListener = useCallback(async () => {
+    if (typeof window === 'undefined' || !('DeviceOrientationEvent' in window)) {
+      setSensorStatus('Sensor tidak didukung browser');
+      setManualMode(true);
+      return;
     }
-  }, []);
+
+    const DeviceOrientationEventTyped =
+      DeviceOrientationEvent as unknown as {
+        requestPermission?: () => Promise<'granted' | 'denied'>;
+      };
+
+    if (typeof DeviceOrientationEventTyped.requestPermission === 'function') {
+      try {
+        const response = await DeviceOrientationEventTyped.requestPermission();
+        if (response !== 'granted') {
+          setSensorStatus('Izin sensor ditolak');
+          setManualMode(true);
+          return;
+        }
+      } catch {
+        setSensorStatus('Gagal meminta izin sensor');
+        setManualMode(true);
+        return;
+      }
+    }
+
+    window.addEventListener(
+      'deviceorientationabsolute' as keyof WindowEventMap,
+      handleOrientation as EventListener,
+      true
+    );
+    window.addEventListener('deviceorientation', handleOrientation, true);
+
+    // Jika setelah 2.5 detik sensor tidak mengirim angka, aktifkan mode manual otomatis
+    setTimeout(() => {
+      setCompassSupported((prev) => {
+        if (!prev) {
+          setSensorStatus('HP tidak memiliki sensor magnetometer');
+          setManualMode(true);
+        }
+        return prev;
+      });
+    }, 2500);
+  }, [handleOrientation]);
 
   useEffect(() => {
     fetchLocationAndPrayers();
-
-    if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
-      const DeviceOrientationEventTyped =
-        DeviceOrientationEvent as unknown as {
-          requestPermission?: () => Promise<'granted' | 'denied'>;
-        };
-
-      if (typeof DeviceOrientationEventTyped.requestPermission === 'function') {
-        setPermissionNeeded(true);
-      } else {
-        // Prioritaskan deviceorientationabsolute untuk kompas magnetik Android
-        window.addEventListener(
-          'deviceorientationabsolute' as keyof WindowEventMap,
-          handleOrientation as EventListener,
-          true
-        );
-        window.addEventListener('deviceorientation', handleOrientation, true);
-      }
-    }
+    startCompassListener();
 
     return () => {
       if (typeof window !== 'undefined') {
@@ -151,33 +186,13 @@ export default function KiblatPage() {
         window.removeEventListener('deviceorientation', handleOrientation, true);
       }
     };
-  }, [fetchLocationAndPrayers, handleOrientation]);
+  }, [fetchLocationAndPrayers, startCompassListener, handleOrientation]);
 
-  const requestCompassPermission = async () => {
-    const DeviceOrientationEventTyped =
-      DeviceOrientationEvent as unknown as {
-        requestPermission?: () => Promise<'granted' | 'denied'>;
-      };
-
-    if (typeof DeviceOrientationEventTyped.requestPermission === 'function') {
-      try {
-        const response = await DeviceOrientationEventTyped.requestPermission();
-        if (response === 'granted') {
-          setPermissionNeeded(false);
-          window.addEventListener('deviceorientation', handleOrientation, true);
-        }
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  };
-
-  const needleRotation = compassSupported
-    ? (qiblaAngle - deviceHeading + 360) % 360
-    : qiblaAngle;
-
+  const activeHeading = compassSupported || manualMode ? deviceHeading : 0;
+  const needleRotation = (qiblaAngle - activeHeading + 360) % 360;
   const isAligned =
-    compassSupported && (needleRotation <= 5 || needleRotation >= 355);
+    (compassSupported || manualMode) &&
+    (needleRotation <= 5 || needleRotation >= 355);
 
   const prayerList = prayerTimes
     ? [
@@ -256,19 +271,15 @@ export default function KiblatPage() {
               className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full ${
                 compassSupported
                   ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
-                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+                  : 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400'
               }`}
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span>
-                {compassSupported
-                  ? `Sensor Aktif (${deviceHeading}°)`
-                  : 'Mode Statis (Tanpa Sensor Kompas)'}
-              </span>
+              <span>{sensorStatus}</span>
             </div>
           </div>
 
-          {/* Lingkaran Kompas */}
+          {/* Lingkaran Kompas (Piringan mata angin ikut berputar sesuai arah hadap HP) */}
           <div className="relative w-64 h-64 flex items-center justify-center my-2">
             <div
               className={`w-full h-full rounded-full border-8 transition-colors duration-300 flex items-center justify-center relative shadow-inner ${
@@ -277,18 +288,24 @@ export default function KiblatPage() {
                   : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950'
               }`}
             >
-              <span className="absolute top-2.5 text-xs font-bold text-rose-500">
-                U
-              </span>
-              <span className="absolute bottom-2.5 text-xs font-bold text-slate-400">
-                S
-              </span>
-              <span className="absolute right-3 text-xs font-bold text-slate-400">
-                T
-              </span>
-              <span className="absolute left-3 text-xs font-bold text-slate-400">
-                B
-              </span>
+              {/* Huruf Mata Angin */}
+              <div
+                className="absolute inset-0 transition-transform duration-150 ease-out"
+                style={{ transform: `rotate(${-activeHeading}deg)` }}
+              >
+                <span className="absolute top-2.5 left-1/2 -translate-x-1/2 text-xs font-bold text-rose-500">
+                  U
+                </span>
+                <span className="absolute bottom-2.5 left-1/2 -translate-x-1/2 text-xs font-bold text-slate-400">
+                  S
+                </span>
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                  T
+                </span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
+                  B
+                </span>
+              </div>
 
               {/* Jarum Penunjuk Kiblat */}
               <div
@@ -327,23 +344,50 @@ export default function KiblatPage() {
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
               {isAligned
-                ? 'Posisi perangkat sudah menghadap tepat ke arah Kiblat.'
+                ? 'Posisi sudah menghadap tepat ke arah Kiblat.'
                 : compassSupported
-                ? 'Pegang HP mendatar dan putar badan hingga panah mengarah lurus ke atas.'
-                : 'Perangkat/browser tidak mengirim data kompas. Gunakan arah ' +
-                  qiblaAngle +
-                  '° Barat Laut (antara Barat dan Utara).'}
+                ? 'Pegang HP mendatar lalu putar badan sampai panah menunjuk lurus ke atas.'
+                : 'HP Anda tidak memiliki sensor kompas fisik. Sesuaikan arah hadap Anda menggunakan pengatur manual di bawah.'}
             </p>
           </div>
 
-          {permissionNeeded && (
-            <button
-              onClick={requestCompassPermission}
-              className="bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition shadow-sm"
-            >
-              Aktifkan Sensor Kompas Perangkat
-            </button>
-          )}
+          {/* Tombol Pemicu Sensor & Pengatur Manual */}
+          <div className="w-full max-w-xs pt-2 space-y-3 border-t border-slate-100 dark:border-slate-800">
+            {!compassSupported && (
+              <button
+                onClick={() => {
+                  setManualMode(false);
+                  startCompassListener();
+                }}
+                className="w-full bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold py-2.5 px-4 rounded-xl transition shadow-sm"
+              >
+                Coba Aktifkan Sensor Kompas
+              </button>
+            )}
+
+            <div className="space-y-1.5 text-left">
+              <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                <span className="flex items-center gap-1 font-medium">
+                  <SlidersHorizontal className="w-3.5 h-3.5" />
+                  Arah Hadap Anda (Manual)
+                </span>
+                <span className="font-mono font-bold text-teal-600 dark:text-teal-400">
+                  {activeHeading}°
+                </span>
+              </div>
+              <input
+                type="range"
+                min={0}
+                max={359}
+                value={activeHeading}
+                onChange={(e) => {
+                  setManualMode(true);
+                  setDeviceHeading(Number(e.target.value));
+                }}
+                className="w-full accent-teal-600 cursor-pointer"
+              />
+            </div>
+          </div>
         </section>
 
         {/* Bagian Jadwal Sholat Harian */}
