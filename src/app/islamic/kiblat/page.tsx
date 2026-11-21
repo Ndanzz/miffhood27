@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import {
   Compass,
@@ -10,6 +10,7 @@ import {
   Navigation,
   RefreshCw,
   AlertCircle,
+  Smartphone,
 } from 'lucide-react';
 
 interface PrayerTimes {
@@ -43,7 +44,7 @@ function calculateQiblaDirection(lat: number, lng: number): number {
 
 export default function KiblatPage() {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [qiblaAngle, setQiblaAngle] = useState<number>(295); // Default arah Kiblat Indonesia (~295°)
+  const [qiblaAngle, setQiblaAngle] = useState<number>(295);
   const [deviceHeading, setDeviceHeading] = useState<number>(0);
   const [compassSupported, setCompassSupported] = useState<boolean>(false);
   const [permissionNeeded, setPermissionNeeded] = useState<boolean>(false);
@@ -53,8 +54,7 @@ export default function KiblatPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [locationError, setLocationError] = useState<string | null>(null);
 
-  // Ambil Lokasi GPS & Jadwal Sholat
-  const fetchLocationAndPrayers = () => {
+  const fetchLocationAndPrayers = useCallback(() => {
     setLoading(true);
     setLocationError(null);
 
@@ -74,7 +74,6 @@ export default function KiblatPage() {
         setQiblaAngle(angle);
 
         try {
-          // Ambil jadwal sholat metode Kemenag RI (method=20)
           const res = await fetch(
             `https://api.aladhan.com/v1/timings?latitude=${lat}&longitude=${lng}&method=20`
           );
@@ -83,9 +82,7 @@ export default function KiblatPage() {
             setPrayerTimes(json.data.timings);
             const hijri = json.data.date?.hijri;
             if (hijri) {
-              setDateHijri(
-                `${hijri.day} ${hijri.month.en} ${hijri.year} H`
-              );
+              setDateHijri(`${hijri.day} ${hijri.month.en} ${hijri.year} H`);
             }
           }
         } catch (err) {
@@ -97,18 +94,34 @@ export default function KiblatPage() {
       (err) => {
         console.error(err);
         setLocationError(
-          'Izin lokasi ditolak. Aktifkan GPS untuk menghitung sudut Kiblat & jadwal sholat akurat.'
+          'Izin lokasi ditolak. Aktifkan GPS di HP Anda untuk menghitung sudut Kiblat & jadwal sholat akurat.'
         );
         setLoading(false);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
-  };
+  }, []);
+
+  const handleOrientation = useCallback((event: DeviceOrientationEvent) => {
+    const webkitHeading = (
+      event as DeviceOrientationEvent & { webkitCompassHeading?: number }
+    ).webkitCompassHeading;
+
+    if (typeof webkitHeading === 'number' && !isNaN(webkitHeading)) {
+      // iOS Safari
+      setDeviceHeading(Math.round(webkitHeading));
+      setCompassSupported(true);
+    } else if (event.alpha !== null && !isNaN(event.alpha)) {
+      // Android Chrome (absolute atau standar)
+      const heading = Math.round((360 - event.alpha) % 360);
+      setDeviceHeading(heading);
+      setCompassSupported(true);
+    }
+  }, []);
 
   useEffect(() => {
     fetchLocationAndPrayers();
 
-    // Cek dukungan sensor kompas (DeviceOrientation)
     if (typeof window !== 'undefined' && 'DeviceOrientationEvent' in window) {
       const DeviceOrientationEventTyped =
         DeviceOrientationEvent as unknown as {
@@ -118,32 +131,27 @@ export default function KiblatPage() {
       if (typeof DeviceOrientationEventTyped.requestPermission === 'function') {
         setPermissionNeeded(true);
       } else {
+        // Prioritaskan deviceorientationabsolute untuk kompas magnetik Android
+        window.addEventListener(
+          'deviceorientationabsolute' as keyof WindowEventMap,
+          handleOrientation as EventListener,
+          true
+        );
         window.addEventListener('deviceorientation', handleOrientation, true);
       }
     }
 
     return () => {
       if (typeof window !== 'undefined') {
+        window.removeEventListener(
+          'deviceorientationabsolute' as keyof WindowEventMap,
+          handleOrientation as EventListener,
+          true
+        );
         window.removeEventListener('deviceorientation', handleOrientation, true);
       }
     };
-  }, []);
-
-  const handleOrientation = (event: DeviceOrientationEvent) => {
-    const webkitHeading = (
-      event as DeviceOrientationEvent & { webkitCompassHeading?: number }
-    ).webkitCompassHeading;
-
-    if (typeof webkitHeading === 'number') {
-      setDeviceHeading(Math.round(webkitHeading));
-      setCompassSupported(true);
-    } else if (event.alpha !== null) {
-      // Android / standar browser
-      const heading = Math.round((360 - event.alpha) % 360);
-      setDeviceHeading(heading);
-      setCompassSupported(true);
-    }
-  };
+  }, [fetchLocationAndPrayers, handleOrientation]);
 
   const requestCompassPermission = async () => {
     const DeviceOrientationEventTyped =
@@ -164,15 +172,12 @@ export default function KiblatPage() {
     }
   };
 
-  // Sudut putar jarum kompas relatif terhadap arah hadap HP
   const needleRotation = compassSupported
     ? (qiblaAngle - deviceHeading + 360) % 360
     : qiblaAngle;
 
-  // Cek apakah sudah menghadap Kiblat (toleransi ±5 derajat)
   const isAligned =
-    compassSupported &&
-    (needleRotation <= 5 || needleRotation >= 355);
+    compassSupported && (needleRotation <= 5 || needleRotation >= 355);
 
   const prayerList = prayerTimes
     ? [
@@ -204,7 +209,7 @@ export default function KiblatPage() {
                 Arah Kiblat &amp; Jadwal Sholat
               </h1>
               <p className="text-xs text-teal-100">
-                {dateHijri || 'Penentu arah Ka\'bah & waktu sholat'}
+                {dateHijri || "Penentu arah Ka'bah & waktu sholat"}
               </p>
             </div>
           </div>
@@ -220,7 +225,6 @@ export default function KiblatPage() {
       </header>
 
       <main className="max-w-4xl mx-auto px-4 pt-6 space-y-6">
-        {/* Peringatan jika GPS ditolak */}
         {locationError && (
           <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -235,20 +239,37 @@ export default function KiblatPage() {
 
         {/* Kartu Kompas Kiblat */}
         <section className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col items-center text-center space-y-5">
-          <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3.5 py-1.5 rounded-full">
-            <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-            {coords ? (
+          {/* Status GPS & Sensor */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full">
+              <MapPin className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+              {coords ? (
+                <span>
+                  {coords.lat.toFixed(4)}°, {coords.lng.toFixed(4)}°
+                </span>
+              ) : (
+                <span>Mendeteksi GPS...</span>
+              )}
+            </div>
+
+            <div
+              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-full ${
+                compassSupported
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
+              }`}
+            >
+              <Smartphone className="w-3.5 h-3.5" />
               <span>
-                {coords.lat.toFixed(4)}°, {coords.lng.toFixed(4)}°
+                {compassSupported
+                  ? `Sensor Aktif (${deviceHeading}°)`
+                  : 'Mode Statis (Tanpa Sensor Kompas)'}
               </span>
-            ) : (
-              <span>Mendeteksi koordinat lokasi...</span>
-            )}
+            </div>
           </div>
 
           {/* Lingkaran Kompas */}
           <div className="relative w-64 h-64 flex items-center justify-center my-2">
-            {/* Ring Luar */}
             <div
               className={`w-full h-full rounded-full border-8 transition-colors duration-300 flex items-center justify-center relative shadow-inner ${
                 isAligned
@@ -256,7 +277,6 @@ export default function KiblatPage() {
                   : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950'
               }`}
             >
-              {/* Penanda Mata Angin */}
               <span className="absolute top-2.5 text-xs font-bold text-rose-500">
                 U
               </span>
@@ -272,7 +292,7 @@ export default function KiblatPage() {
 
               {/* Jarum Penunjuk Kiblat */}
               <div
-                className="w-44 h-44 flex items-center justify-center transition-transform duration-200 ease-out"
+                className="w-44 h-44 flex items-center justify-center transition-transform duration-150 ease-out"
                 style={{ transform: `rotate(${needleRotation}deg)` }}
               >
                 <div className="flex flex-col items-center -mt-12">
@@ -293,26 +313,29 @@ export default function KiblatPage() {
                 </div>
               </div>
 
-              {/* Titik Tengah */}
               <div className="w-4 h-4 rounded-full bg-slate-800 dark:bg-slate-200 border-2 border-white dark:border-slate-900 absolute" />
             </div>
           </div>
 
-          {/* Info Derajat & Status */}
+          {/* Info Derajat & Panduan */}
           <div className="space-y-1.5">
             <p className="text-2xl font-extrabold text-teal-700 dark:text-teal-400">
-              {qiblaAngle}° <span className="text-sm font-medium text-slate-500">dari Utara</span>
+              {qiblaAngle}°{' '}
+              <span className="text-sm font-medium text-slate-500">
+                dari Utara
+              </span>
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
               {isAligned
                 ? 'Posisi perangkat sudah menghadap tepat ke arah Kiblat.'
                 : compassSupported
-                ? 'Putar perangkat secara mendatar hingga panah mengarah lurus ke atas.'
-                : 'Arahkan perangkat ke sudut ' + qiblaAngle + '° Barat Laut menggunakan kompas.'}
+                ? 'Pegang HP mendatar dan putar badan hingga panah mengarah lurus ke atas.'
+                : 'Perangkat/browser tidak mengirim data kompas. Gunakan arah ' +
+                  qiblaAngle +
+                  '° Barat Laut (antara Barat dan Utara).'}
             </p>
           </div>
 
-          {/* Tombol Izin Sensor Kompas (Khusus iOS / Safari) */}
           {permissionNeeded && (
             <button
               onClick={requestCompassPermission}
