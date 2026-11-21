@@ -10,6 +10,7 @@ import {
   Clock,
   ChevronRight,
   MoonStar,
+  Mic,
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -24,6 +25,15 @@ export default function HomePage() {
       colorBg: 'bg-emerald-50 dark:bg-emerald-950/60',
       colorText: 'text-emerald-600 dark:text-emerald-400',
       borderHover: 'hover:border-emerald-500',
+    },
+    {
+      title: "Tahsin Al-Qur'an",
+      description: 'Panduan makharijul huruf & hukum bacaan tajwid',
+      href: '/islamic/tahsin',
+      icon: Mic,
+      colorBg: 'bg-sky-50 dark:bg-sky-950/60',
+      colorText: 'text-sky-600 dark:text-sky-400',
+      borderHover: 'hover:border-sky-500',
     },
     {
       title: "Kumpulan Do'a",
@@ -118,18 +128,18 @@ export default function HomePage() {
               Fitur Islami
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              Akses Al-Qur&apos;an, doa harian, dan penunjuk arah Kiblat
+              Akses Al-Qur&apos;an, tahsin, doa harian, dan penunjuk arah Kiblat
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             {islamicMenus.map((menu) => {
               const IconComponent = menu.icon;
               return (
                 <Link
                   key={menu.href}
                   href={menu.href}
-                  className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex sm:flex-col items-center sm:items-start gap-3.5 shadow-sm transition ${menu.borderHover}`}
+                  className={`bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex items-center gap-3.5 shadow-sm transition ${menu.borderHover}`}
                 >
                   <div className={`p-3 rounded-xl shrink-0 ${menu.colorBg} ${menu.colorText}`}>
                     <IconComponent className="w-6 h-6" />
