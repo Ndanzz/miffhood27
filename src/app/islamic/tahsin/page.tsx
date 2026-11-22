@@ -2,21 +2,40 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Mic, ArrowLeft, BookOpenCheck, Languages, ChevronRight } from 'lucide-react';
+import {
+  Mic,
+  ArrowLeft,
+  BookOpenCheck,
+  Languages,
+  ChevronRight,
+  AudioWaveform,
+} from 'lucide-react';
 
 export default function TahsinMenuPage() {
   const tahsinSections = [
     {
       title: 'Makhorijul Huruf',
-      subtitle: 'Tempat Keluarnya Huruf Hijaiyah',
+      subtitle: '17 Tempat Keluarnya Huruf Hijaiyah',
       description:
-        'Pelajari pembagian tempat keluarnya huruf mulai dari Al-Jauf, Al-Halq (tenggorokan), Al-Lisan (lidah), Asy-Syafatain (bibir), hingga Al-Khaisyum.',
+        'Pelajari 17 pembagian makhraj mulai dari Al-Jauf, Al-Halq (tenggorokan), Al-Lisan (lidah), Asy-Syafatain (bibir), hingga Al-Khaisyum.',
       href: '/islamic/tahsin/makhorijul-huruf',
       icon: Languages,
-      badge: 'Makhraj & Sifat',
+      badge: '17 Makhroj',
       colorBg: 'bg-sky-50 dark:bg-sky-950/60',
       colorText: 'text-sky-600 dark:text-sky-400',
       borderHover: 'hover:border-sky-500',
+    },
+    {
+      title: 'Sifatul Huruf',
+      subtitle: 'Karakteristik & Sifat-Sifat Huruf',
+      description:
+        'Pelajari sifat huruf yang memiliki lawan (Hams, Jahr, Syiddah, Isti\'la, Ithbaq) serta sifat tunggal (Qalqalah, Shafir, Lin, Tafasysyi).',
+      href: '/islamic/tahsin/sifatul-huruf',
+      icon: AudioWaveform,
+      badge: 'Sifat & Karakter',
+      colorBg: 'bg-emerald-50 dark:bg-emerald-950/60',
+      colorText: 'text-emerald-600 dark:text-emerald-400',
+      borderHover: 'hover:border-emerald-500',
     },
     {
       title: "Tajwid Al-Qur'an",
@@ -50,7 +69,7 @@ export default function TahsinMenuPage() {
               Tahsin Al-Qur&apos;an
             </h1>
             <p className="text-xs text-sky-100">
-              Pilih materi pembelajaran makhraj atau ilmu tajwid
+              Pilih materi makhraj, sifat huruf, atau ilmu tajwid
             </p>
           </div>
         </div>

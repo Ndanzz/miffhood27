@@ -35,7 +35,7 @@ export default function TajwidPage() {
         const { data, error } = await supabase
           .from('mh_tahsin')
           .select('*')
-          .neq('category', 'Makharijul Huruf')
+          .not('category', 'in', '("Makharijul Huruf","Sifatul Huruf")')
           .order('created_at', { ascending: true });
 
         if (error) {
