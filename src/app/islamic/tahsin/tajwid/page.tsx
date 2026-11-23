@@ -16,9 +16,9 @@ interface TahsinItem {
   title: string;
   letters: string;
   explanation: string;
-  example_arabic: string;
+  example_arabic: string | null;
   example_latin: string | null;
-  how_to_read: string;
+  how_to_read: string | null;
 }
 
 // Helper pengecekan apakah bab memiliki Qoidah asli
@@ -26,7 +26,6 @@ function hasQoidah(text?: string | null): boolean {
   if (!text) return false;
   const trimmed = text.trim();
   if (!trimmed) return false;
-  // Abaikan jika isinya hanya metadata sumber halaman kitab
   if (trimmed.startsWith("Kitab Tajwid Pegon Sunda")) return false;
   return true;
 }
@@ -73,6 +72,7 @@ export default function KitabTajwidPage() {
       item.title.toLowerCase().includes(q) ||
       item.explanation.toLowerCase().includes(q) ||
       (item.example_latin && item.example_latin.toLowerCase().includes(q)) ||
+      (item.example_arabic && item.example_arabic.toLowerCase().includes(q)) ||
       item.letters.toLowerCase().includes(q);
 
     return matchFashal && matchSearch;
@@ -131,6 +131,7 @@ export default function KitabTajwidPage() {
               key={`${item.category}-${item.nomor}`}
               className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900"
             >
+              {/* Sub-kategori & Nomor */}
               <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
                   {item.sub_category || item.category}
@@ -140,21 +141,25 @@ export default function KitabTajwidPage() {
                 </span>
               </div>
 
+              {/* Judul Bab */}
               <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
                 {item.title}
               </h2>
 
+              {/* Ketentuan Huruf */}
               {item.letters && (
                 <div className="mt-3 rounded-lg bg-amber-50 px-3.5 py-2.5 text-base font-bold text-amber-950 sm:text-lg dark:bg-amber-950/40 dark:text-amber-200">
                   {item.letters}
                 </div>
               )}
 
+              {/* Penjelasan / Patokan */}
               <div className="mt-4 whitespace-pre-line text-base leading-relaxed text-slate-700 sm:text-lg dark:text-slate-300">
                 {item.explanation}
               </div>
 
-              {item.example_arabic && (
+              {/* Contoh Lafadz Al-Qur'an */}
+              {item.example_arabic && item.example_arabic.trim() !== "" && (
                 <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
                   <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
                     Conto Lafadz
@@ -168,25 +173,26 @@ export default function KitabTajwidPage() {
                 </div>
               )}
 
-              {/* KOLOM QOIDAH & NADHOM: HANYA MUNCUL JIKA ADA QOIDAH */}
+              {/* KOLOM QOIDAH & NADHOM (ARAB + PEGON SUNDA RTL BESAR) */}
               {hasQoidah(item.example_latin) && (
                 <div className="mt-5 rounded-2xl border-2 border-emerald-600/80 bg-emerald-50/90 p-5 shadow-sm sm:p-6 dark:border-emerald-500/70 dark:bg-emerald-950/40">
-                  <div className="mb-3 flex items-center gap-2">
+                  <div className="mb-3 flex items-center justify-between gap-2">
                     <span className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
                       Qoidah &amp; Nadhom
                     </span>
                   </div>
 
                   <p
-                    dir="auto"
-                    className="whitespace-pre-line text-xl font-semibold leading-[2] tracking-wide text-slate-900 sm:text-2xl dark:text-slate-100"
+                    dir="rtl"
+                    className="whitespace-pre-line text-right font-serif text-2xl font-bold leading-[2.3] text-slate-900 sm:text-3xl dark:text-slate-100"
                   >
                     {item.example_latin}
                   </p>
                 </div>
               )}
 
-              {item.how_to_read && (
+              {/* Cara Maca */}
+              {item.how_to_read && item.how_to_read.trim() !== "" && (
                 <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-sky-50/80 p-3.5 text-sm font-medium leading-relaxed text-sky-950 sm:text-base dark:bg-sky-950/40 dark:text-sky-200">
                   <span className="font-bold">Cara Maca:</span>
                   <span>{item.how_to_read}</span>
