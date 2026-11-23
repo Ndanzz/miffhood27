@@ -1,22 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import {
-  BookOpenCheck,
-  ArrowLeft,
-  Search,
-  BookCheck,
-  ScrollText,
-  Layers,
-} from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import React, { useEffect, useState } from "react";
+import { createClient } from "@supabase/supabase-js";
 
-interface TajwidMaterial {
-  id: string;
-  nomor?: number | null;
+// Inisialisasi Supabase Client (sesuaikan jika sudah punya helper di lib/supabase.ts)
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
+interface TahsinItem {
+  id?: number;
+  nomor: number;
   category: string;
-  sub_category?: string | null;
+  sub_category: string;
   title: string;
   letters: string;
   explanation: string;
@@ -25,202 +22,221 @@ interface TajwidMaterial {
   how_to_read: string;
 }
 
-export default function TajwidPage() {
-  const [materials, setMaterials] = useState<TajwidMaterial[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('Sadayana Fashal');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+/**
+ * Helper untuk memisahkan teks Arab di dalam tanda kutip ("...") pada qoidah
+ * dengan nadhom/penjelasan Sunda-nya agar masing-masing tampil optimal.
+ */
+function renderQoidahContent(text: string) {
+  // Pisahkan bagian matan Arab di dalam tanda kutip jika ada
+  const arabicQuoteRegex = /"([^"]*[\u0600-\u06FF]+[^"]*)"/g;
+  const parts: { type: "arabic" | "latin"; content: string }[] = [];
 
-  const supabase = createClient();
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = arabicQuoteRegex.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      const before = text.slice(lastIndex, match.index).trim();
+      if (before) parts.push({ type: "latin", content: before });
+    }
+    parts.push({ type: "arabic", content: match[1].trim() });
+    lastIndex = arabicQuoteRegex.lastIndex;
+  }
+
+  if (lastIndex < text.length) {
+    const remaining = text.slice(lastIndex).trim();
+    if (remaining) parts.push({ type: "latin", content: remaining });
+  }
+
+  if (parts.length === 0) {
+    return (
+      <p className="whitespace-pre-line text-lg font-semibold leading-relaxed text-slate-900 sm:text-xl dark:text-slate-100">
+        {text}
+      </p>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {parts.map((part, idx) =>
+        part.type === "arabic" ? (
+          <div
+            key={idx}
+            dir="rtl"
+            className="rounded-lg border border-emerald-200/80 bg-white px-4 py-3 text-right font-serif text-2xl font-bold leading-[2.2] tracking-normal text-emerald-950 shadow-xs sm:text-3xl dark:border-emerald-800/60 dark:bg-slate-900/90 dark:text-emerald-200"
+          >
+            {part.content}
+          </div>
+        ) : (
+          <p
+            key={idx}
+            className="whitespace-pre-line text-lg font-semibold leading-relaxed tracking-wide text-slate-900 sm:text-xl dark:text-slate-100"
+          >
+            {part.content}
+          </p>
+        )
+      )}
+    </div>
+  );
+}
+
+export default function TahsinTajwidPage() {
+  const [items, setItems] = useState<TahsinItem[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    async function fetchTajwid() {
-      try {
-        setLoading(true);
-        setErrorMsg(null);
+    async function fetchTahsin() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("mh_tahsin")
+        .select("*")
+        .order("nomor", { ascending: true });
 
-        const { data, error } = await supabase
-          .from('mh_tahsin')
-          .select('*')
-          .not('category', 'in', '("Makharijul Huruf","Sifatul Huruf")')
-          .order('nomor', { ascending: true });
-
-        if (error) {
-          setErrorMsg(error.message);
-        } else if (data) {
-          setMaterials(data);
-        }
-      } catch (err: unknown) {
-        if (err instanceof Error) {
-          setErrorMsg(err.message);
-        } else {
-          setErrorMsg('Gagal memuat data Tajwid dari Supabase.');
-        }
-      } finally {
-        setLoading(false);
+      if (!error && data) {
+        setItems(data);
       }
+      setLoading(false);
     }
-
-    fetchTajwid();
+    fetchTahsin();
   }, []);
 
   const categories = [
-    'Sadayana Fashal',
-    ...Array.from(new Set(materials.map((item) => item.category))),
+    "Semua",
+    ...Array.from(new Set(items.map((item) => item.category))),
   ];
 
-  const filteredMaterials = materials.filter((item) => {
-    const matchesCategory =
-      selectedCategory === 'Sadayana Fashal' || item.category === selectedCategory;
-
-    const matchesSearch =
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.explanation.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.letters.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.example_latin.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchesCategory && matchesSearch;
+  const filteredItems = items.filter((item) => {
+    const matchCategory =
+      selectedCategory === "Semua" || item.category === selectedCategory;
+    const q = searchQuery.toLowerCase();
+    const matchSearch =
+      !q ||
+      item.title.toLowerCase().includes(q) ||
+      item.explanation.toLowerCase().includes(q) ||
+      item.example_latin.toLowerCase().includes(q) ||
+      item.letters.toLowerCase().includes(q);
+    return matchCategory && matchSearch;
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 pb-24 transition-colors duration-300">
+    <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
       {/* Header */}
-      <header className="sticky top-0 z-10 bg-indigo-600 dark:bg-indigo-900 text-white px-4 py-4 shadow-md backdrop-blur-md">
-        <div className="max-w-4xl mx-auto flex items-center gap-3">
-          <Link
-            href="/islamic/tahsin"
-            className="p-2 rounded-xl bg-indigo-700/50 hover:bg-indigo-700 transition"
-            aria-label="Kembali ke Menu Tahsin"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-xl font-bold flex items-center gap-2">
-              <BookOpenCheck className="w-5 h-5 text-indigo-200" />
-              Kitab Tajwid Al-Qur&apos;an
-            </h1>
-            <p className="text-xs text-indigo-100">
-              Ta&apos;rif, patokan, conto lafaz, sareng nadhom qoidah
-            </p>
-          </div>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
+          Kitab Tajwid & Tahsin
+        </h1>
+        <p className="mt-1 text-sm text-slate-600 sm:text-base dark:text-slate-400">
+          Panduan lengkap hukum bacaan Al-Qur&apos;an, matan qoidah, sarta nadhom
+          Sunda.
+        </p>
+      </div>
 
-        {/* Input Pencarian */}
-        <div className="max-w-4xl mx-auto mt-4 relative">
-          <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
-          <input
-            type="text"
-            placeholder="Pilari fashal, hukum tajwid, huruf, atanapi qoidah..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner"
-          />
-        </div>
-      </header>
+      {/* Pencarian & Filter Kategori */}
+      <div className="mb-6 space-y-3">
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Cari bab, hukum bacaan, huruf, atau qoidah..."
+          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+        />
 
-      {/* Main Content */}
-      <main className="max-w-4xl mx-auto px-4 pt-5 space-y-5">
-        {/* Filter Fashal / Bab */}
-        {categories.length > 1 && (
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-3 shadow-sm space-y-2">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1">
-              <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Pilih Fashal / Bab Kitab:</span>
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold shrink-0 transition ${
-                    selectedCategory === cat
-                      ? 'bg-indigo-600 text-white shadow-sm'
-                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Daftar Materi Tajwid */}
-        {loading ? (
-          <div className="py-20 text-center space-y-3">
-            <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              Ngamuat materi kitab Tajwid...
-            </p>
-          </div>
-        ) : errorMsg ? (
-          <div className="bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center space-y-2">
-            <p className="text-sm font-bold text-red-600 dark:text-red-400">
-              Gagal Ngamuat Data
-            </p>
-            <p className="text-xs text-red-500 font-mono break-all">{errorMsg}</p>
-          </div>
-        ) : filteredMaterials.length === 0 ? (
-          <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center space-y-2">
-            <p className="text-base font-semibold">Materi teu kapendak</p>
-            <p className="text-xs text-slate-400">
-              Teu acan aya data dina fashal ieu atanapi kecap pilarian teu cocog.
-            </p>
-          </div>
-        ) : (
-          filteredMaterials.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3.5 hover:border-indigo-400 transition"
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+                selectedCategory === cat
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+              }`}
             >
-              {/* Lencana Fashal & Huruf/Keterangan */}
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 px-3 py-1 rounded-lg">
-                  {item.sub_category || item.category}
-                </span>
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
 
-                <span className="text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/50 px-3 py-1 rounded-lg">
-                  {item.letters}
+      {/* Daftar Materi */}
+      {loading ? (
+        <div className="py-12 text-center text-base text-slate-500">
+          Memuat materi tajwid...
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {filteredItems.map((item) => (
+            <article
+              key={item.nomor}
+              className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6 dark:border-slate-800 dark:bg-slate-900"
+            >
+              {/* Badge Sub-Kategori & Nomor */}
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <span className="rounded-md bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                  {item.sub_category}
+                </span>
+                <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
+                  #{item.nomor}
                 </span>
               </div>
 
-              {/* Judul Materi */}
-              <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
+              {/* Judul Bab */}
+              <h2 className="text-xl font-bold text-slate-900 sm:text-2xl dark:text-white">
                 {item.title}
               </h2>
 
-              {/* Penjelasan & Patokan (Format Baris-per-Baris) */}
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-                {item.explanation}
-              </p>
-
-              {/* Kotak Conto Lafaz Arab & Dalil Qoidah */}
-              <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-4 space-y-2.5">
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
-                  <ScrollText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-                  <span>Conto Lafaz &amp; Dalil Qoidah:</span>
+              {/* Huruf / Ketentuan Kunci */}
+              {item.letters && (
+                <div className="mt-3 rounded-lg bg-amber-50 px-3.5 py-2.5 text-base font-bold text-amber-950 sm:text-lg dark:bg-amber-950/40 dark:text-amber-200">
+                  {item.letters}
                 </div>
-                <p
-                  dir="rtl"
-                  className="text-right text-lg sm:text-xl font-serif leading-loose text-indigo-900 dark:text-indigo-200 whitespace-pre-line"
-                >
-                  {item.example_arabic}
-                </p>
-                <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400 italic border-t border-slate-200/60 dark:border-slate-700/60 pt-2 whitespace-pre-line">
-                  {item.example_latin}
-                </p>
+              )}
+
+              {/* Penjelasan / Patokan */}
+              <div className="mt-4 whitespace-pre-line text-base leading-relaxed text-slate-700 sm:text-lg dark:text-slate-300">
+                {item.explanation}
               </div>
 
-              {/* Catetan / Cara Maca */}
-              <div className="flex items-start gap-2 pt-1 text-xs text-slate-600 dark:text-slate-300">
-                <BookCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <p className="whitespace-pre-line">{item.how_to_read}</p>
-              </div>
-            </div>
-          ))
-        )}
-      </main>
+              {/* Contoh Lafadz Arab */}
+              {item.example_arabic && (
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950/60">
+                  <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-slate-500">
+                    Conto Lafadz
+                  </div>
+                  <p
+                    dir="rtl"
+                    className="whitespace-pre-line text-right font-serif text-2xl font-bold leading-[2.2] text-slate-900 sm:text-3xl dark:text-white"
+                  >
+                    {item.example_arabic}
+                  </p>
+                </div>
+              )}
+
+              {/* BLOK QOIDAH & NADHOM (BESAR & JELAS) */}
+              {item.example_latin && (
+                <div className="mt-5 rounded-2xl border-2 border-emerald-600/80 bg-emerald-50/90 p-5 shadow-sm sm:p-6 dark:border-emerald-500/70 dark:bg-emerald-950/40">
+                  <div className="mb-3 flex items-center gap-2">
+                    <span className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
+                      Qoidah &amp; Nadhom
+                    </span>
+                  </div>
+                  {renderQoidahContent(item.example_latin)}
+                </div>
+              )}
+
+              {/* Cara Baca / Ringkasan Praktik */}
+              {item.how_to_read && (
+                <div className="mt-4 flex items-start gap-2.5 rounded-xl bg-sky-50/80 p-3.5 text-sm font-medium leading-relaxed text-sky-950 sm:text-base dark:bg-sky-950/40 dark:text-sky-200">
+                  <span className="font-bold">Cara Maca:</span>
+                  <span>{item.how_to_read}</span>
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
