@@ -17,8 +17,18 @@ interface TahsinItem {
   letters: string;
   explanation: string;
   example_arabic: string;
-  example_latin: string;
+  example_latin: string | null;
   how_to_read: string;
+}
+
+// Helper pengecekan apakah bab memiliki Qoidah asli
+function hasQoidah(text?: string | null): boolean {
+  if (!text) return false;
+  const trimmed = text.trim();
+  if (!trimmed) return false;
+  // Abaikan jika isinya hanya metadata sumber halaman kitab
+  if (trimmed.startsWith("Kitab Tajwid Pegon Sunda")) return false;
+  return true;
 }
 
 export default function KitabTajwidPage() {
@@ -37,7 +47,6 @@ export default function KitabTajwidPage() {
         .order("nomor", { ascending: true });
 
       if (!error && data) {
-        // Filter ganda untuk memastikan Makharijul Huruf & Sifatul Huruf tidak ikut tampil
         const pureTajwid = data.filter((item) => {
           const cat = item.category.toLowerCase();
           return !cat.includes("makharij") && !cat.includes("sifatul");
@@ -49,7 +58,6 @@ export default function KitabTajwidPage() {
     fetchTajwidOnly();
   }, []);
 
-  // Daftar Fashal khusus Ilmu Tajwid
   const tajwidFashals = [
     "Semua",
     ...Array.from(new Set(items.map((item) => item.category))),
@@ -64,7 +72,7 @@ export default function KitabTajwidPage() {
       !q ||
       item.title.toLowerCase().includes(q) ||
       item.explanation.toLowerCase().includes(q) ||
-      item.example_latin.toLowerCase().includes(q) ||
+      (item.example_latin && item.example_latin.toLowerCase().includes(q)) ||
       item.letters.toLowerCase().includes(q);
 
     return matchFashal && matchSearch;
@@ -160,8 +168,8 @@ export default function KitabTajwidPage() {
                 </div>
               )}
 
-              {/* BLOK QOIDAH & NADHOM MENYATU (BESAR & JELAS) */}
-              {item.example_latin && (
+              {/* KOLOM QOIDAH & NADHOM: HANYA MUNCUL JIKA ADA QOIDAH */}
+              {hasQoidah(item.example_latin) && (
                 <div className="mt-5 rounded-2xl border-2 border-emerald-600/80 bg-emerald-50/90 p-5 shadow-sm sm:p-6 dark:border-emerald-500/70 dark:bg-emerald-950/40">
                   <div className="mb-3 flex items-center gap-2">
                     <span className="rounded-lg bg-emerald-700 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-white">
