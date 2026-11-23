@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
 interface NavMenu {
   label: string;
@@ -23,18 +22,26 @@ export default function OfflineAppShell({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
+  const [pathname, setPathname] = useState<string>("");
   const [isOffline, setIsOffline] = useState<boolean>(false);
 
   useEffect(() => {
-    // 1. Daftarkan Service Worker agar seluruh aset & halaman tersimpan offline
+    // Sinkronkan pathname aktif di sisi klien tanpa memblokir prerender
+    const syncPathname = () => {
+      setPathname(window.location.pathname);
+    };
+    syncPathname();
+
+    window.addEventListener("popstate", syncPathname);
+
+    // Daftarkan Service Worker agar seluruh aset & halaman tersimpan offline
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {
         // Abaikan jika gagal di mode dev
       });
     }
 
-    // 2. Pantau status koneksi internet secara real-time
+    // Pantau status koneksi internet secara real-time
     setIsOffline(!navigator.onLine);
     const goOffline = () => setIsOffline(true);
     const goOnline = () => setIsOffline(false);
@@ -43,6 +50,7 @@ export default function OfflineAppShell({
     window.addEventListener("online", goOnline);
 
     return () => {
+      window.removeEventListener("popstate", syncPathname);
       window.removeEventListener("offline", goOffline);
       window.removeEventListener("online", goOnline);
     };
@@ -63,6 +71,7 @@ export default function OfflineAppShell({
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <Link
             href="/"
+            onClick={() => setPathname("/")}
             className="flex items-center gap-2 font-serif text-lg font-extrabold text-emerald-800 dark:text-emerald-400"
           >
             <span>۞</span>
@@ -76,6 +85,7 @@ export default function OfflineAppShell({
                 <Link
                   key={menu.href}
                   href={menu.href}
+                  onClick={() => setPathname(menu.href)}
                   className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition sm:text-sm ${
                     isActive
                       ? "bg-emerald-700 text-white shadow-xs"
