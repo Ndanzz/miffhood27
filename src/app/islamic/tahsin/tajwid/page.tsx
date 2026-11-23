@@ -27,7 +27,7 @@ interface TajwidMaterial {
 
 export default function TajwidPage() {
   const [materials, setMaterials] = useState<TajwidMaterial[]>([]);
-  const [selectedCategory, setSelectedCategory] = useState('Sadayana Bab');
+  const [selectedCategory, setSelectedCategory] = useState('Sadayana Fashal');
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -66,13 +66,13 @@ export default function TajwidPage() {
   }, []);
 
   const categories = [
-    'Sadayana Bab',
+    'Sadayana Fashal',
     ...Array.from(new Set(materials.map((item) => item.category))),
   ];
 
   const filteredMaterials = materials.filter((item) => {
     const matchesCategory =
-      selectedCategory === 'Sadayana Bab' || item.category === selectedCategory;
+      selectedCategory === 'Sadayana Fashal' || item.category === selectedCategory;
 
     const matchesSearch =
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -98,10 +98,10 @@ export default function TajwidPage() {
           <div>
             <h1 className="text-xl font-bold flex items-center gap-2">
               <BookOpenCheck className="w-5 h-5 text-indigo-200" />
-              Tajwid Al-Qur&apos;an
+              Kitab Tajwid Al-Qur&apos;an
             </h1>
             <p className="text-xs text-indigo-100">
-              Patokan, conto bacaan, sareng qoidah nadhom tajwid
+              Ta&apos;rif, patokan, conto lafaz, sareng nadhom qoidah
             </p>
           </div>
         </div>
@@ -111,7 +111,7 @@ export default function TajwidPage() {
           <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400" />
           <input
             type="text"
-            placeholder="Pilari hukum tajwid, huruf, atanapi qoidah..."
+            placeholder="Pilari fashal, hukum tajwid, huruf, atanapi qoidah..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 shadow-inner"
@@ -121,12 +121,12 @@ export default function TajwidPage() {
 
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 pt-5 space-y-5">
-        {/* Filter Bab Tajwid */}
+        {/* Filter Fashal / Bab */}
         {categories.length > 1 && (
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-3 shadow-sm space-y-2">
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 px-1">
               <Layers className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-              <span>Pilih Bab Ilmu Tajwid:</span>
+              <span>Pilih Fashal / Bab Kitab:</span>
             </div>
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
               {categories.map((cat) => (
@@ -151,7 +151,7 @@ export default function TajwidPage() {
           <div className="py-20 text-center space-y-3">
             <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Ngamuat materi Tajwid...
+              Ngamuat materi kitab Tajwid...
             </p>
           </div>
         ) : errorMsg ? (
@@ -165,7 +165,7 @@ export default function TajwidPage() {
           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-8 text-center space-y-2">
             <p className="text-base font-semibold">Materi teu kapendak</p>
             <p className="text-xs text-slate-400">
-              Teu acan aya data dina bab ieu atanapi kecap pilarian teu cocog.
+              Teu acan aya data dina fashal ieu atanapi kecap pilarian teu cocog.
             </p>
           </div>
         ) : (
@@ -174,28 +174,28 @@ export default function TajwidPage() {
               key={item.id}
               className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-5 shadow-sm space-y-3.5 hover:border-indigo-400 transition"
             >
-              {/* Lencana Bab & Huruf */}
+              {/* Lencana Fashal & Huruf/Keterangan */}
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-xs font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-400 px-3 py-1 rounded-lg">
-                  {item.category}
+                  {item.sub_category || item.category}
                 </span>
 
                 <span className="text-xs font-bold text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200/60 dark:border-amber-800/50 px-3 py-1 rounded-lg">
-                  Huruf: {item.letters}
+                  {item.letters}
                 </span>
               </div>
 
-              {/* Judul Hukum Tajwid */}
+              {/* Judul Materi */}
               <h2 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
                 {item.title}
               </h2>
 
-              {/* Patokan */}
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+              {/* Penjelasan & Patokan (Format Baris-per-Baris) */}
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-line">
                 {item.explanation}
               </p>
 
-              {/* Kotak Conto Arab & Qoidah Nadhom */}
+              {/* Kotak Conto Lafaz Arab & Dalil Qoidah */}
               <div className="bg-slate-50 dark:bg-slate-800/70 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-4 space-y-2.5">
                 <div className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400">
                   <ScrollText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -203,19 +203,19 @@ export default function TajwidPage() {
                 </div>
                 <p
                   dir="rtl"
-                  className="text-right text-xl sm:text-2xl font-serif leading-loose text-indigo-900 dark:text-indigo-200"
+                  className="text-right text-lg sm:text-xl font-serif leading-loose text-indigo-900 dark:text-indigo-200 whitespace-pre-line"
                 >
                   {item.example_arabic}
                 </p>
-                <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400 italic border-t border-slate-200/60 dark:border-slate-700/60 pt-2">
+                <p className="text-xs font-medium text-indigo-700 dark:text-indigo-400 italic border-t border-slate-200/60 dark:border-slate-700/60 pt-2 whitespace-pre-line">
                   {item.example_latin}
                 </p>
               </div>
 
-              {/* Conto & Cara Maca */}
+              {/* Catetan / Cara Maca */}
               <div className="flex items-start gap-2 pt-1 text-xs text-slate-600 dark:text-slate-300">
                 <BookCheck className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
-                <p>{item.how_to_read}</p>
+                <p className="whitespace-pre-line">{item.how_to_read}</p>
               </div>
             </div>
           ))
