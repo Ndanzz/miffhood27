@@ -46,6 +46,7 @@ export const viewport: Viewport = {
   themeColor: "#047857",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
@@ -58,7 +59,7 @@ export default function RootLayout({
       lang="id"
       className={`${plusJakartaSans.variable} ${notoNaskhArabic.variable} ${amiri.variable}`}
     >
-      <body className="font-sans antialiased bg-stone-50 text-slate-900 dark:bg-slate-950 dark:text-white">
+      <body className="overflow-x-hidden bg-stone-50 font-sans text-slate-900 antialiased dark:bg-slate-950 dark:text-white">
         <OfflineAppShell>{children}</OfflineAppShell>
       </body>
     </html>

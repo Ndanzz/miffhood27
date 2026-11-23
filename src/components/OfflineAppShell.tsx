@@ -5,15 +5,16 @@ import Link from "next/link";
 
 interface NavMenu {
   label: string;
+  shortLabel: string;
   href: string;
   badge?: string;
 }
 
 const APP_MENUS: NavMenu[] = [
-  { label: "Kitab Tajwid", href: "/tajwid", badge: "49 Bab" },
-  { label: "Makharijul Huruf", href: "/makhraj" },
-  { label: "Sifatul Huruf", href: "/sifatul-huruf" },
-  { label: "Utilitas Harian", href: "/utilitas" },
+  { label: "Kitab Tajwid", shortLabel: "Tajwid", href: "/tajwid", badge: "49" },
+  { label: "Makharijul Huruf", shortLabel: "Makhraj", href: "/makhraj" },
+  { label: "Sifatul Huruf", shortLabel: "Sifat", href: "/sifatul-huruf" },
+  { label: "Utilitas Harian", shortLabel: "Utilitas", href: "/utilitas" },
 ];
 
 export default function OfflineAppShell({
@@ -25,7 +26,6 @@ export default function OfflineAppShell({
   const [isOffline, setIsOffline] = useState<boolean>(false);
 
   useEffect(() => {
-    // Sinkronkan pathname aktif di sisi klien tanpa memblokir prerender
     const syncPathname = () => {
       setPathname(window.location.pathname);
     };
@@ -33,14 +33,12 @@ export default function OfflineAppShell({
 
     window.addEventListener("popstate", syncPathname);
 
-    // Daftarkan Service Worker agar seluruh aset & halaman tersimpan offline
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {
         // Abaikan jika gagal di mode dev
       });
     }
 
-    // Pantau status koneksi internet secara real-time
     setIsOffline(!navigator.onLine);
     const goOffline = () => setIsOffline(true);
     const goOnline = () => setIsOffline(false);
@@ -56,27 +54,31 @@ export default function OfflineAppShell({
   }, []);
 
   return (
-    <div className="min-h-screen bg-stone-50 text-slate-900 dark:bg-slate-950 dark:text-white">
+    <div className="min-h-screen overflow-x-hidden bg-stone-50 text-slate-900 dark:bg-slate-950 dark:text-white">
       {/* Banner Indikator Saat Offline */}
       {isOffline && (
-        <div className="bg-amber-600 px-4 py-2 text-center text-xs font-bold text-white shadow-xs">
-          Mode Offline Aktif â€” Seluruh materi kitab &amp; menu tetap dapat
-          diakses dari penyimpanan perangkat.
+        <div className="sticky top-0 z-40 bg-amber-600 px-3 py-2 text-center text-xs font-bold text-white shadow-xs">
+          Mode Offline Aktif — Seluruh materi kitab &amp; menu tetap bisa
+          dibuka.
         </div>
       )}
 
-      <header className="border-b border-stone-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
+      {/* Header Atas (Ringkas di HP, Lengkap di Desktop) */}
+      <header className="sticky top-0 z-30 border-b border-stone-200/90 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-3">
           <Link
             href="/"
             onClick={() => setPathname("/")}
-            className="flex items-center gap-2 font-serif text-lg font-extrabold text-emerald-800 dark:text-emerald-400"
+            className="flex min-h-[40px] items-center gap-2 font-serif text-lg font-extrabold tracking-tight text-emerald-800 dark:text-emerald-400"
           >
-            <span>Ûž</span>
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-700 text-xs font-bold text-white">
+              M
+            </span>
             <span>miffhood27</span>
           </Link>
 
-          <nav className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+          {/* Navigasi Desktop / Tablet */}
+          <nav className="hidden items-center gap-1.5 md:flex">
             {APP_MENUS.map((menu) => {
               const isActive = pathname === menu.href;
               return (
@@ -84,7 +86,7 @@ export default function OfflineAppShell({
                   key={menu.href}
                   href={menu.href}
                   onClick={() => setPathname(menu.href)}
-                  className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition sm:text-sm ${
+                  className={`inline-flex min-h-[38px] items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-bold transition ${
                     isActive
                       ? "bg-emerald-700 text-white shadow-xs"
                       : "bg-stone-100 text-slate-700 hover:bg-emerald-50 hover:text-emerald-800 dark:bg-slate-800 dark:text-slate-300"
@@ -106,11 +108,66 @@ export default function OfflineAppShell({
               );
             })}
           </nav>
+
+          {/* Indikator Status Koneksi Ringkas di HP */}
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-semibold md:hidden ${
+              isOffline
+                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/70 dark:text-emerald-300"
+            }`}
+          >
+            <span
+              className={`h-2 w-2 rounded-full ${
+                isOffline ? "bg-amber-500" : "bg-emerald-500"
+              }`}
+            />
+            {isOffline ? "Offline" : "Siap"}
+          </span>
         </div>
       </header>
 
-      {/* Isi Halaman */}
-      <div>{children}</div>
+      {/* Konten Utama — diberi padding bawah ekstra di HP agar tidak tertutup Bottom Nav */}
+      <main className="mx-auto max-w-4xl px-3.5 pt-4 pb-24 sm:px-5 md:pb-10">
+        {children}
+      </main>
+
+      {/* Bottom Navigation Bar Khusus Layar HP */}
+      <nav
+        aria-label="Navigasi Utama HP"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-stone-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-md dark:border-slate-800 dark:bg-slate-900/95 md:hidden"
+      >
+        <div className="mx-auto grid max-w-md grid-cols-4 gap-1 px-2 py-1.5">
+          {APP_MENUS.map((menu) => {
+            const isActive = pathname === menu.href;
+            return (
+              <Link
+                key={menu.href}
+                href={menu.href}
+                onClick={() => setPathname(menu.href)}
+                className={`flex min-h-[48px] flex-col items-center justify-center rounded-xl px-1 py-1 text-center transition active:scale-[0.98] ${
+                  isActive
+                    ? "bg-emerald-700 text-white shadow-xs"
+                    : "text-slate-600 hover:bg-stone-100 dark:text-slate-300 dark:hover:bg-slate-800"
+                }`}
+              >
+                <span className="text-xs font-bold leading-tight">
+                  {menu.shortLabel}
+                </span>
+                {menu.badge && (
+                  <span
+                    className={`mt-0.5 text-[10px] font-semibold leading-none ${
+                      isActive ? "text-emerald-100" : "text-amber-600 dark:text-amber-400"
+                    }`}
+                  >
+                    {menu.badge} Bab
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
     </div>
   );
 }
