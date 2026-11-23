@@ -157,35 +157,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="space-y-3">
-          <div className="px-1">
-            <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Pesan menu makanan dan minuman favorit
-            </p>
-          </div>
 
-          <Link
-            href="/menu"
-            className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 rounded-2xl flex items-center justify-between hover:border-orange-500 transition shadow-sm group"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="p-3 rounded-xl bg-orange-50 dark:bg-orange-950/60 text-orange-600 dark:text-orange-400">
-                <UtensilsCrossed className="w-6 h-6" />
-              </div>
-              <div>
-                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">
-                  Katalog Menu &amp; Pemesanan
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Lihat daftar menu tersedia dan buat pesanan
-                </p>
-              </div>
-            </div>
-            <ChevronRight className="w-5 h-5 text-slate-400 group-hover:text-orange-600 group-hover:translate-x-0.5 transition" />
-          </Link>
-        </section>
       </main>
     </div>
   );
