@@ -21,110 +21,43 @@ interface TahsinItem {
   how_to_read: string;
 }
 
-type MainSection = "Makharijul Huruf" | "Sifatul Huruf" | "Ilmu Tajwid";
-
-function renderQoidahContent(text: string) {
-  const arabicQuoteRegex = /"([^"]*[\u0600-\u06FF]+[^"]*)"/g;
-  const parts: { type: "arabic" | "latin"; content: string }[] = [];
-
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
-
-  while ((match = arabicQuoteRegex.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      const before = text.slice(lastIndex, match.index).trim();
-      if (before) parts.push({ type: "latin", content: before });
-    }
-    parts.push({ type: "arabic", content: match[1].trim() });
-    lastIndex = arabicQuoteRegex.lastIndex;
-  }
-
-  if (lastIndex < text.length) {
-    const remaining = text.slice(lastIndex).trim();
-    if (remaining) parts.push({ type: "latin", content: remaining });
-  }
-
-  if (parts.length === 0) {
-    return (
-      <p className="whitespace-pre-line text-lg font-semibold leading-relaxed text-slate-900 sm:text-xl dark:text-slate-100">
-        {text}
-      </p>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      {parts.map((part, idx) =>
-        part.type === "arabic" ? (
-          <div
-            key={idx}
-            dir="rtl"
-            className="rounded-lg border border-emerald-200/80 bg-white px-4 py-3 text-right font-serif text-2xl font-bold leading-[2.2] text-emerald-950 shadow-xs sm:text-3xl dark:border-emerald-800/60 dark:bg-slate-900/90 dark:text-emerald-200"
-          >
-            {part.content}
-          </div>
-        ) : (
-          <p
-            key={idx}
-            className="whitespace-pre-line text-lg font-semibold leading-relaxed tracking-wide text-slate-900 sm:text-xl dark:text-slate-100"
-          >
-            {part.content}
-          </p>
-        )
-      )}
-    </div>
-  );
-}
-
-export default function TahsinTajwidPage() {
+export default function KitabTajwidPage() {
   const [items, setItems] = useState<TahsinItem[]>([]);
-  const [mainSection, setMainSection] = useState<MainSection>("Ilmu Tajwid");
   const [selectedFashal, setSelectedFashal] = useState<string>("Semua");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    async function fetchTahsin() {
+    async function fetchTajwidOnly() {
       setLoading(true);
       const { data, error } = await supabase
         .from("mh_tahsin")
         .select("*")
+        .not("category", "in", '("Makharijul Huruf","Sifatul Huruf")')
         .order("nomor", { ascending: true });
 
       if (!error && data) {
-        setItems(data);
+        // Filter ganda untuk memastikan Makharijul Huruf & Sifatul Huruf tidak ikut tampil
+        const pureTajwid = data.filter((item) => {
+          const cat = item.category.toLowerCase();
+          return !cat.includes("makharij") && !cat.includes("sifatul");
+        });
+        setItems(pureTajwid);
       }
       setLoading(false);
     }
-    fetchTahsin();
+    fetchTajwidOnly();
   }, []);
 
-  // Pisahkan data berdasarkan 3 bagian utama
-  const sectionItems = items.filter((item) => {
-    if (mainSection === "Makharijul Huruf") {
-      return item.category === "Makharijul Huruf";
-    }
-    if (mainSection === "Sifatul Huruf") {
-      return item.category === "Sifatul Huruf";
-    }
-    // Selain Makhraj & Sifatul Huruf masuk ke Ilmu Tajwid (Fashal 1 - 13 & Waqaf)
-    return (
-      item.category !== "Makharijul Huruf" &&
-      item.category !== "Sifatul Huruf"
-    );
-  });
-
-  // Sub-filter Fashal khusus untuk tab Ilmu Tajwid
+  // Daftar Fashal khusus Ilmu Tajwid
   const tajwidFashals = [
     "Semua",
-    ...Array.from(new Set(sectionItems.map((item) => item.category))),
+    ...Array.from(new Set(items.map((item) => item.category))),
   ];
 
-  const filteredItems = sectionItems.filter((item) => {
+  const filteredItems = items.filter((item) => {
     const matchFashal =
-      mainSection !== "Ilmu Tajwid" ||
-      selectedFashal === "Semua" ||
-      item.category === selectedFashal;
+      selectedFashal === "Semua" || item.category === selectedFashal;
 
     const q = searchQuery.toLowerCase();
     const matchSearch =
@@ -139,36 +72,15 @@ export default function TahsinTajwidPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6">
-      <div className="mb-5">
+      {/* Header Khusus Kitab Tajwid */}
+      <div className="mb-6">
         <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl dark:text-white">
-          Modul Tahsin &amp; Ilmu Tajwid
+          Kitab Ilmu Tajwid
         </h1>
         <p className="mt-1 text-sm text-slate-600 sm:text-base dark:text-slate-400">
-          Pilih bagian materi: Makharijul Huruf, Sifatul Huruf, atau Kitab
-          Tajwid.
+          Kumpulan hukum bacaan Al-Qur&apos;an (Fashal 1 s/d 13, Waqaf, Saktah,
+          Isymam &amp; Imalah).
         </p>
-      </div>
-
-      {/* 3 TAB UTAMA PEMISAH */}
-      <div className="mb-5 grid grid-cols-3 gap-2 rounded-2xl bg-slate-100 p-1.5 dark:bg-slate-800">
-        {(["Makharijul Huruf", "Sifatul Huruf", "Ilmu Tajwid"] as MainSection[]).map(
-          (tab) => (
-            <button
-              key={tab}
-              onClick={() => {
-                setMainSection(tab);
-                setSelectedFashal("Semua");
-              }}
-              className={`rounded-xl px-3 py-2.5 text-xs font-bold transition sm:text-sm ${
-                mainSection === tab
-                  ? "bg-emerald-600 text-white shadow-sm"
-                  : "text-slate-700 hover:bg-white/60 dark:text-slate-300 dark:hover:bg-slate-700"
-              }`}
-            >
-              {tab}
-            </button>
-          )
-        )}
       </div>
 
       {/* Pencarian */}
@@ -177,34 +89,32 @@ export default function TahsinTajwidPage() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder={`Cari di dalam ${mainSection}...`}
+          placeholder="Cari bab tajwid, hukum bacaan, huruf, atau qoidah..."
           className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 shadow-xs focus:border-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
         />
       </div>
 
-      {/* Filter Fashal (Hanya muncul saat tab Ilmu Tajwid aktif) */}
-      {mainSection === "Ilmu Tajwid" && (
-        <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
-          {tajwidFashals.map((fashal) => (
-            <button
-              key={fashal}
-              onClick={() => setSelectedFashal(fashal)}
-              className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
-                selectedFashal === fashal
-                  ? "bg-emerald-700 text-white shadow-xs"
-                  : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
-              }`}
-            >
-              {fashal}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Filter Fashal Tajwid */}
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+        {tajwidFashals.map((fashal) => (
+          <button
+            key={fashal}
+            onClick={() => setSelectedFashal(fashal)}
+            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
+              selectedFashal === fashal
+                ? "bg-emerald-700 text-white shadow-xs"
+                : "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
+            }`}
+          >
+            {fashal}
+          </button>
+        ))}
+      </div>
 
-      {/* Daftar Materi */}
+      {/* Daftar Materi Tajwid */}
       {loading ? (
         <div className="py-12 text-center text-base text-slate-500">
-          Memuat materi...
+          Memuat materi kitab tajwid...
         </div>
       ) : (
         <div className="space-y-6">
@@ -250,6 +160,7 @@ export default function TahsinTajwidPage() {
                 </div>
               )}
 
+              {/* BLOK QOIDAH & NADHOM MENYATU (BESAR & JELAS) */}
               {item.example_latin && (
                 <div className="mt-5 rounded-2xl border-2 border-emerald-600/80 bg-emerald-50/90 p-5 shadow-sm sm:p-6 dark:border-emerald-500/70 dark:bg-emerald-950/40">
                   <div className="mb-3 flex items-center gap-2">
@@ -257,7 +168,13 @@ export default function TahsinTajwidPage() {
                       Qoidah &amp; Nadhom
                     </span>
                   </div>
-                  {renderQoidahContent(item.example_latin)}
+
+                  <p
+                    dir="auto"
+                    className="whitespace-pre-line text-xl font-semibold leading-[2] tracking-wide text-slate-900 sm:text-2xl dark:text-slate-100"
+                  >
+                    {item.example_latin}
+                  </p>
                 </div>
               )}
 
