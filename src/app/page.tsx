@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -69,7 +69,6 @@ export default function HomePage() {
               Assalamu&apos;alaikum
             </h1>
             <p className="text-xs sm:text-sm text-emerald-100 max-w-md">
-              Pendamping ibadah harian dan layanan kuliner dalam satu aplikasi praktis.
             </p>
           </div>
 
@@ -158,11 +157,9 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Bagian Modul Kuliner / Menu */}
         <section className="space-y-3">
           <div className="px-1">
             <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">
-              Layanan Kuliner
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Pesan menu makanan dan minuman favorit

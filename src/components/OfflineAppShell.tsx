@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
@@ -9,7 +9,6 @@ interface NavMenu {
   badge?: string;
 }
 
-// Menu kuliner sudah dihapus sepenuhnya; seluruh menu di bawah ini siap offline
 const APP_MENUS: NavMenu[] = [
   { label: "Kitab Tajwid", href: "/tajwid", badge: "49 Bab" },
   { label: "Makharijul Huruf", href: "/makhraj" },
@@ -61,12 +60,11 @@ export default function OfflineAppShell({
       {/* Banner Indikator Saat Offline */}
       {isOffline && (
         <div className="bg-amber-600 px-4 py-2 text-center text-xs font-bold text-white shadow-xs">
-          Mode Offline Aktif — Seluruh materi kitab &amp; menu tetap dapat
+          Mode Offline Aktif â€” Seluruh materi kitab &amp; menu tetap dapat
           diakses dari penyimpanan perangkat.
         </div>
       )}
 
-      {/* Navbar Utama Tanpa Menu Kuliner */}
       <header className="border-b border-stone-200 bg-white px-4 py-3 dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3">
           <Link
@@ -74,7 +72,7 @@ export default function OfflineAppShell({
             onClick={() => setPathname("/")}
             className="flex items-center gap-2 font-serif text-lg font-extrabold text-emerald-800 dark:text-emerald-400"
           >
-            <span>۞</span>
+            <span>Ûž</span>
             <span>miffhood27</span>
           </Link>
 
